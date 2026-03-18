@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 2e66bf86b5f0d53499789431dbca0536
+  - enabled: 1
+    path: Assets/Scenes/IntroVideo.unity
+    guid: a1604960238a39d4081c743371f782f1
+  - enabled: 1
+    path: Assets/Scenes/Puerto.unity
+    guid: d411a0cc1c717534aaa31307408e2b46
+  - enabled: 1
+    path: Assets/Scenes/Playa.unity
+    guid: 32ffd148afff739409f771ab578c6dd0
+  - enabled: 1
+    path: Assets/Scenes/Mercado.unity
+    guid: 3990e46e51c85824ab421148a91bd9be
+  - enabled: 1
+    path: Assets/Scenes/Centro.unity
+    guid: 79a81b0fb4c882b43ad85ac9ff9cd576
+  - enabled: 1
+    path: Assets/Scenes/Auberge.unity
+    guid: 1c40629428fe679498beabb627a42029
+  - enabled: 1
+    path: Assets/Scenes/Plaza.unity
+    guid: 0546c970ff8bf0f489200c6b32acd5fb
+  - enabled: 1
+    path: Assets/Scenes/Salida.unity
+    guid: 9af8bae1d6cb5864b815508335a1fd13
+  m_configObjects: {}
