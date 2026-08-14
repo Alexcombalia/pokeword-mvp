@@ -1,47 +1,66 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using UnityEngine;
 
 public static class DynamicWordHighlighter
 {
+    // Matches [french|spanish] tags inserted by the server
+    private static readonly Regex tagPattern = new Regex(@"\[([^\|\]]+)\|([^\]]+)\]");
+
+    // Matches plain French words for database fallback
+    private static readonly Regex wordPattern = new Regex(@"\b[\wà-ÿÀ-Ÿ']+\b");
+
     public static string ProcessText(string input, out Dictionary<string, (string fr, string es)> capturableWords)
     {
-        Dictionary<string, (string fr, string es)> tempCapturable = new Dictionary<string, (string fr, string es)>();
+        var capturable = new Dictionary<string, (string fr, string es)>();
 
         if (string.IsNullOrEmpty(input))
         {
-            capturableWords = tempCapturable;
+            capturableWords = capturable;
             return input;
         }
 
-        var db = DynamicWordDatabase.Instance;
-        if (db == null)
+        // Pass 1 — extract server-tagged words [french|spanish]
+        string result = tagPattern.Replace(input, match =>
         {
-            capturableWords = tempCapturable;
-            return input;
-        }
+            string fr = match.Groups[1].Value.Trim().ToLower();
+            string es = match.Groups[2].Value.Trim();
+            string display = match.Groups[1].Value.Trim();
 
-        string pattern = @"\b[\w�-�']+\b";
+            if (!capturable.ContainsKey(fr))
+                capturable[fr] = (fr, es);
 
-        string result = Regex.Replace(input, pattern, match =>
-        {
-            string originalWord = match.Value;
-            string cleanWord = originalWord.ToLower();
-
-            if (db.TryGetTranslation(cleanWord, out string translation))
-            {
-                if (!tempCapturable.ContainsKey(cleanWord))
-                {
-                    tempCapturable[cleanWord] = (cleanWord, translation);
-                }
-
-                return $"<link=\"{cleanWord}\"><color=yellow>{originalWord}</color></link>";
-            }
-
-            return originalWord;
+            // Azul tinta (#1F5C8A, mismo tono que SpeechCaptionUI.SpanishInk),
+            // no el dorado pálido #FFD166 pensado para el panel de chat azul
+            // marino antiguo — sobre el pergamino claro actual ese dorado casi
+            // no se distinguía del papel (contraste casi nulo), y encima el
+            // cuerpo del texto del NPC ya es dorado oscuro (FrenchInk), así que
+            // un dorado más claro tampoco se distinguía de la frase alrededor.
+            return $"<link=\"{fr}\"><u><color=#1F5C8A>{display}</color></u></link>";
         });
 
-        capturableWords = tempCapturable;
+        // Pass 2 — fallback: highlight words found in the local database
+        var db = DynamicWordDatabase.Instance;
+        if (db != null)
+        {
+            result = wordPattern.Replace(result, match =>
+            {
+                string original = match.Value;
+                string clean = original.ToLower();
+
+                // Skip if already inside a TMPro link tag
+                if (capturable.ContainsKey(clean)) return original;
+
+                if (db.TryGetTranslation(clean, out string translation))
+                {
+                    capturable[clean] = (clean, translation);
+                    return $"<link=\"{clean}\"><u><color=#1F5C8A>{original}</color></u></link>";
+                }
+
+                return original;
+            });
+        }
+
+        capturableWords = capturable;
         return result;
     }
 }

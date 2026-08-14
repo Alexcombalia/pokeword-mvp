@@ -26,7 +26,6 @@ public class NPCInteractable : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            // Construir diccionario para DialogueSystem
             var dict = new Dictionary<string, (string fr, string es)>();
             foreach (var w in capturableWords)
             {
@@ -42,7 +41,9 @@ public class NPCInteractable : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player")) playerInRange = true;
+        if (!other.CompareTag("Player")) return;
+        playerInRange = true;
+        Haptics.Light();
     }
 
     private void OnTriggerExit2D(Collider2D other)

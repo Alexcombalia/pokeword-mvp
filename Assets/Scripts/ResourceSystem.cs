@@ -15,6 +15,20 @@ public class ResourceSystem : MonoBehaviour
     public float waterDrainPerSecond = 0.0005f;
     public float energyDrainPerSecond = 0.0005f;
 
+
+    private void Start()
+    {
+        var data = SaveSystem.Load();
+
+        if (data != null)
+        {
+            food = data.food;
+            water = data.water;
+            energy = data.energy;
+            money = data.money;
+        }
+    }
+
     private void Update()
     {
         float dt = Time.deltaTime;
@@ -57,5 +71,12 @@ public class ResourceSystem : MonoBehaviour
 
         money -= amount;
         return true;
+    }
+    public void ResetResources()
+    {
+        food = 0.9f;
+        water = 0.9f;
+        energy = 0.9f;
+        money = 50;
     }
 }

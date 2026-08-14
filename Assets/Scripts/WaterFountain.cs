@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class WaterFountain : MonoBehaviour
 {
-    [SerializeField] private float waterRestore = 0.3f; // 30%
+    [SerializeField] private float waterRestore = 0.3f;
     private ResourceSystem resources;
     private bool playerNear = false;
 
@@ -14,6 +14,10 @@ public class WaterFountain : MonoBehaviour
     private void Update()
     {
         if (!playerNear) return;
+
+        var dialogue = FindObjectOfType<DialogueSystem>();
+        if (dialogue != null && dialogue.IsOpen())
+            return;
 
         if (Input.GetKeyDown(KeyCode.E))
         {

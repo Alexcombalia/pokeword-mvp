@@ -4,12 +4,13 @@ using UnityEngine.Networking;
 
 public class BakerChatClient : MonoBehaviour
 {
-    [SerializeField] private string serverUrl = "http://localhost:3000/npc/baker";
+    [SerializeField] private string serverUrl = "https://pokeword-npc-server-kvml-production.up.railway.app/npc/baker";
 
     [System.Serializable]
     private class BakerRequest
     {
         public string message;
+        public string difficulty;
     }
 
     [System.Serializable]
@@ -19,10 +20,13 @@ public class BakerChatClient : MonoBehaviour
         public string npc;
         public string userMessage;
         public string reply;
+        public string replyTranslation;
+        public string playerMessageTranslation;
+        public string audioBase64;
     }
     public IEnumerator ResetMemory(System.Action onDone = null, System.Action<string> onError = null)
     {
-        string resetUrl = "http://localhost:3000/npc/baker/reset";
+        string resetUrl = "https://pokeword-npc-server-kvml-production.up.railway.app/npc/baker/reset";
 
         using (var request = new UnityWebRequest(resetUrl, "POST"))
         {
@@ -41,9 +45,9 @@ public class BakerChatClient : MonoBehaviour
             onDone?.Invoke();
         }
     }
-    public IEnumerator SendMessage(string message, System.Action<string> onReply, System.Action<string> onError)
+    public IEnumerator SendMessage(string message, System.Action<string, string, string> onReply, System.Action<string> onError)
     {
-        var reqObj = new BakerRequest { message = message };
+        var reqObj = new BakerRequest { message = message, difficulty = GameSettings.Difficulty };
         string json = JsonUtility.ToJson(reqObj);
 
         using (var request = new UnityWebRequest(serverUrl, "POST"))
@@ -66,11 +70,12 @@ public class BakerChatClient : MonoBehaviour
 
             if (resp == null || !resp.ok)
             {
-                onError?.Invoke("Respuesta inv·lida del servidor");
+                onError?.Invoke("Respuesta inv√°lida del servidor");
                 yield break;
             }
 
-            onReply?.Invoke(resp.reply);
+            NPCVoicePlayer.Instance?.PlayVoice(resp.audioBase64);
+            onReply?.Invoke(resp.reply, resp.replyTranslation, resp.playerMessageTranslation);
         }
     }
 }

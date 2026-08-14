@@ -3,6 +3,9 @@ using UnityEngine.SceneManagement;
 
 public class PlayerSpawner : MonoBehaviour
 {
+    [Tooltip("Position used when the scene has no SpawnPoint object")]
+    [SerializeField] private Vector2 defaultSpawnPosition = new Vector2(-3f, -1f);
+
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -15,12 +18,12 @@ public class PlayerSpawner : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        var spawn = GameObject.Find("SpawnPoint");
         var player = GameObject.FindWithTag("Player");
+        if (player == null) return;
 
-        if (spawn != null && player != null)
-        {
-            player.transform.position = spawn.transform.position;
-        }
+        var spawn = GameObject.Find("SpawnPoint");
+        player.transform.position = spawn != null
+            ? spawn.transform.position
+            : (Vector3)defaultSpawnPosition;
     }
 }

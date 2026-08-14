@@ -21,15 +21,42 @@ EditorBuildSettings:
     path: Assets/Scenes/Mercado.unity
     guid: 3990e46e51c85824ab421148a91bd9be
   - enabled: 1
-    path: Assets/Scenes/Centro.unity
+    path: Assets/Scenes/BarDragonVerde.unity
     guid: 79a81b0fb4c882b43ad85ac9ff9cd576
   - enabled: 1
     path: Assets/Scenes/Auberge.unity
-    guid: 1c40629428fe679498beabb627a42029
+    guid: 649271a6ab1963746aa80c1f84b65570
   - enabled: 1
     path: Assets/Scenes/Plaza.unity
-    guid: 0546c970ff8bf0f489200c6b32acd5fb
+    guid: db9e05c2cc82e6a419a13cec73115b19
   - enabled: 1
     path: Assets/Scenes/Salida.unity
     guid: 9af8bae1d6cb5864b815508335a1fd13
+  - enabled: 0
+    path: Assets/Scenes/BarDragonVerde.unity
+    guid: 79a81b0fb4c882b43ad85ac9ff9cd576
+  - enabled: 1
+    path: Assets/Scenes/Muelle.unity
+    guid: 80ddc5571fd79984b9507de45bec7ef4
+  - enabled: 1
+    path: Assets/Scenes/CalleStJean.unity
+    guid: 5338cadd734a3f8439b742867247d1ac
+  - enabled: 1
+    path: Assets/Scenes/LaCanebiere.unity
+    guid: 52d9fbb1616764043a76eb2ce704a39c
+  - enabled: 1
+    path: Assets/Scenes/LeParier.unity
+    guid: 2cf854b2bef4c744da71a0a8842796b4
+  - enabled: 1
+    path: Assets/Scenes/Epicerie.unity
+    guid: 08d064c50a567ff499a38c379148dd2b
+  - enabled: 1
+    path: Assets/Scenes/Pescaderia.unity
+    guid: ac8b66d523fc0674f8c6c0583100ae92
+  - enabled: 1
+    path: Assets/Scenes/OficinaPortuaria.unity
+    guid: 4ded64307cb2817498bb512755e5f0a4
+  - enabled: 1
+    path: Assets/Scenes/VillaFrancois.unity
+    guid: 3acf242f48d2f89418bd167cc681dc94
   m_configObjects: {}

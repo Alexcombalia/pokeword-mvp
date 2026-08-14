@@ -3,6 +3,9 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+APK-Build/
+*.apk
+*.aab
 [Ll]ogs/
 UserSettings/
 MemoryCaptures/

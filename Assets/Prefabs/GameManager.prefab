@@ -12,6 +12,10 @@ GameObject:
   - component: {fileID: 6567712250383957298}
   - component: {fileID: 9180715063911917771}
   - component: {fileID: 8040287496668917674}
+  - component: {fileID: 1297277494516887858}
+  - component: {fileID: 3849460855234166500}
+  - component: {fileID: 8171440441461045045}
+  - component: {fileID: 6235282334104482755}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -78,3 +82,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1daab8e423149242bd7e8c51f866e54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1297277494516887858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6376429726968899977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a830aa5dac1338348a13e775e94dab62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentDay: 1
+--- !u!114 &3849460855234166500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6376429726968899977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72f4ce560dce5614ab2c789fe6835fec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentLevel: 1
+  wordsPerLevel: 5
+  maxLevel: 5
+--- !u!114 &8171440441461045045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6376429726968899977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcbdf6fa176c5a5439568b678863ba7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6235282334104482755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6376429726968899977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f35fad856475f7a4d9af749f0f7d6069, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serverUrl: http://localhost:3000/npc/henry
+  resetUrl: http://localhost:3000/npc/henry/reset

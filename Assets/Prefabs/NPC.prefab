@@ -11,7 +11,9 @@ GameObject:
   - component: {fileID: 1320823407026475292}
   - component: {fileID: 1358322813631802976}
   - component: {fileID: 5384277377403321989}
-  - component: {fileID: 4293755505041859805}
+  - component: {fileID: 8277586061414002173}
+  - component: {fileID: 1001359175837846083}
+  - component: {fileID: 5035913048287023231}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Untagged
@@ -131,7 +133,7 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &4293755505041859805
+--- !u!114 &8277586061414002173
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -140,14 +142,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 8371213239497471272}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7f51c444a5778c48a12f69eb1a04693, type: 3}
+  m_Script: {fileID: 11500000, guid: 60b43c2ff878ef34f98160268f04b712, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dialogueLines:
-  - Bonjour ! Je m'appelle Marie.
-  - ">.\xC0 Marseille, j'aime manger une <link=\"pomme\"><color=yellow>pomme</color></link>.\r"
-  - Bonne chance !
-  capturableWords:
-  - linkId: pomme
-    french: pomme
-    spanish: manzana
+  npcId: npc_01
+  personalityId: passant
+  displayName: Inconnu
+--- !u!114 &1001359175837846083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8371213239497471272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b70586f0d13450242886870f360c79c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5035913048287023231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8371213239497471272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 074e94bafb058474e8dc76c0f0fa26f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indicator: {fileID: 0}
