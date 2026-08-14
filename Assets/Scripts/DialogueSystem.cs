@@ -43,6 +43,9 @@ public class DialogueSystem : MonoBehaviour
     private string genericDisplayName;
     private string genericGender;
     private bool genericMode = false;
+    private DetectiveChatClient detectiveClient;
+    private string detectiveDisplayName;
+    private bool detectiveMode = false;
     private bool shopMode    = false;
 
     // Modo "guiones sobre cada personaje" (SpeechCaptionUI) — activo para
@@ -589,6 +592,51 @@ public class DialogueSystem : MonoBehaviour
         }
 
         // -------------------------
+        // NPC DE CASO (modo detective)
+        // -------------------------
+        // Mismo flujo que el NPC genérico salvo en una cosa: aquí NO se pasa
+        // por BeginnerTurnController. El modo detective es avanzado por
+        // definición (público que ya habla francés), y el turno de 3 pasos del
+        // modo débutant partiría en dos cada réplica justo cuando el jugador
+        // está intentando encajar dos frases de dos testigos distintos.
+        if (detectiveMode)
+        {
+            SpeechCaptionUI.Instance?.ShowPlayerLine(msg, GameSettings.IsBasic);
+
+            if (detectiveClient == null)
+            {
+                SpeechCaptionUI.Instance?.ShowNpcLine(detectiveDisplayName, "Erreur: client NPC introuvable.", null);
+                return;
+            }
+
+            StartCoroutine(detectiveClient.SendMessage(msg,
+                (reply, replyTranslation, playerMessageTranslation, playerMessagePhonetic, objectiveComplete, checkpointsReached, audioBase64) =>
+                {
+                    if (seq != chatMessageSeq) return;
+                    var processed = DynamicWordHighlighter.ProcessText(reply, out var capturable);
+                    currentCapturable.Clear();
+                    foreach (var kvp in capturable) currentCapturable[kvp.Key] = kvp.Value;
+
+                    SpeechCaptionUI.Instance?.ShowNpcLine(detectiveDisplayName, processed, HandleLinkClicked);
+                    SpeechCaptionUI.Instance?.ShowTranslation(GameSettings.IsBasic ? replyTranslation : null);
+                    SpeechCaptionUI.Instance?.SetPlayerTranslation(GameSettings.IsBasic ? playerMessageTranslation : null, HandleLinkClicked);
+                    NPCVoicePlayer.Instance?.PlayVoice(audioBase64);
+
+                    // Los hallazgos del caso. LevelManager une lo que reportan
+                    // los cuatro NPCs; el panel verde del HUD se pinta desde
+                    // ahí, no desde aquí.
+                    if (checkpointsReached != null && checkpointsReached.Length > 0)
+                        LevelManager.Instance?.ReportCheckpoints(checkpointsReached);
+                },
+                (error) =>
+                {
+                    SpeechCaptionUI.Instance?.ShowNpcLine(detectiveDisplayName, "Erreur: " + error, null);
+                }
+            ));
+            return;
+        }
+
+        // -------------------------
         // JACQUES
         // -------------------------
         if (jacquesMode)
@@ -802,7 +850,7 @@ public class DialogueSystem : MonoBehaviour
         // (jacquesMode || genericMode): antes solo miraba jacquesMode, así
         // que cerrar la conversación con un NPC genérico tras cumplir el
         // objetivo (niveles 2-4) no llevaba nunca a la pantalla de resultado.
-        if ((jacquesMode || genericMode) && LevelManager.Instance != null && LevelManager.Instance.IsActive
+        if ((jacquesMode || genericMode || detectiveMode) && LevelManager.Instance != null && LevelManager.Instance.IsActive
             && LevelManager.Instance.ObjectiveComplete)
         {
             LevelManager.Instance.FinishLevelNow();
@@ -844,6 +892,7 @@ public class DialogueSystem : MonoBehaviour
         henryMode   = false;
         jacquesMode = false;
         genericMode = false;
+        detectiveMode = false;
         shopMode    = false;
     }
 
@@ -1133,6 +1182,53 @@ public class DialogueSystem : MonoBehaviour
         currentCapturable.Clear();
 
         StartCoroutine(client.ResetMemory(npcId));
+    }
+
+    // Abre la conversación con un NPC de caso (modo detective). La frase de
+    // entrada se muestra en el acto, sin llamar al servidor: en un caso de
+    // misterio dos de ellas son piezas del caso (Denis presentándose, Fabre
+    // dando por hecho que fue un robo) y no pueden depender de que el modelo
+    // se acuerde de decirlas en su primera respuesta.
+    public void OpenDetectiveChat(DetectiveChatClient client, string displayName, string greeting, string greetingTranslation, Transform npcAnchor)
+    {
+        detectiveClient = client;
+        detectiveDisplayName = displayName;
+
+        gameObject.SetActive(true);
+        dialoguePanel.SetActive(true);
+        ShowCloseButton();
+        HideNextButton();
+        isOpen = true;
+        chatMode = true;
+        detectiveMode = true;
+
+        EnterCaptionMode();
+        SpeechCaptionUI.Instance?.SetAnchors(npcAnchor, GameObject.FindWithTag("Player")?.transform);
+
+        if (resources != null) resources.DrainOnConversation();
+        if (dialogueInput != null) { dialogueInput.gameObject.SetActive(true); dialogueInput.text = ""; }
+        if (sendButton != null) sendButton.gameObject.SetActive(true);
+        if (buyBreadButton != null) buyBreadButton.gameObject.SetActive(false);
+        if (acceptJobButton != null) acceptJobButton.gameObject.SetActive(false);
+        if (declineJobButton != null) declineJobButton.gameObject.SetActive(false);
+
+        currentCapturable.Clear();
+
+        // Se borra la memoria de conversación del personaje, no su progreso:
+        // los checkpoints ya ganados los guarda LevelManager. Así el jugador
+        // puede volver a hablar con el mismo testigo las veces que haga falta
+        // —regla de accesibilidad del caso— sin arrastrar un hilo de charla
+        // cada vez más largo ni perder lo que ya descubrió.
+        StartCoroutine(client.ResetMemory(() =>
+        {
+            var processed = DynamicWordHighlighter.ProcessText(greeting, out var capturable);
+            currentCapturable.Clear();
+            foreach (var kvp in capturable) currentCapturable[kvp.Key] = kvp.Value;
+            SpeechCaptionUI.Instance?.ShowNpcLine(displayName, processed, HandleLinkClicked);
+
+            if (GameSettings.IsBasic && !string.IsNullOrEmpty(greetingTranslation))
+                SpeechCaptionUI.Instance?.ShowTranslation(greetingTranslation);
+        }));
     }
 
     public void OpenPoliceChallenge(string challengeLine, System.Action<string> onAnswer, System.Action onTimeout)

@@ -300,10 +300,14 @@ Son las líneas que **no cambian nunca**, literales, mismo patrón híbrido que 
 | `c_someone_asked` | Corentin dice que alguien preguntó por los horarios y la salida |
 | `d_lie_gun` | Denis afirma no llevar arma desde que se retiró |
 | `d_lie_time` | Denis afirma haberse ido mucho antes del disparo |
-| `d_broken` | Denis confiesa (requiere que el jugador le haya dicho **las dos** contradicciones) |
+| `d_confront_gun` | **Interna.** El jugador le ha puesto delante la contradicción del arma |
+| `d_confront_time` | **Interna.** El jugador le ha puesto delante la contradicción de la hora |
+| `d_broken` | Denis confiesa. **Puerta dura: solo si `d_confront_gun` Y `d_confront_time` ya están marcadas** |
 | `f_name`, `f_lies`, `f_motive` | Validaciones de Fabre |
 
-Los ocho primeros son los que pintan línea verde en el panel (§3). `d_broken` da ★ Le menteur. Los tres de Fabre cierran el caso.
+Los ocho primeros de la tabla (hasta `d_lie_time`) son los que pintan línea verde en el panel (§3). `d_broken` da ★ Le menteur. Los tres de Fabre cierran el caso.
+
+**Las dos banderas `d_confront_*` no estaban en el diseño original**; se añadieron al programar el servidor (14/08/2026). Sin ellas el modelo tenía que juzgar "¿me han dicho ya las dos cosas?" de memoria en cada turno, que es justo el tipo de decisión que no sostiene. Convertidas en checkpoints propios, la condición de `d_broken` pasa a ser una comprobación mecánica sobre una lista que el propio modelo ya mantiene. **Son internas: no se muestran al jugador ni pintan línea verde.**
 
 ---
 
