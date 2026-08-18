@@ -44,6 +44,16 @@ public class LevelHUD : MonoBehaviour
     TMP_Text   headerTxt;
     List<TMP_Text> wordEntries = new List<TMP_Text>();
 
+    GameObject timerBg;      // se recoloca en modo detective: el panel de arriba crece con el texto
+    GameObject hintBtn;
+    TMP_Text   hintBtnLabel;
+    GameObject hintPanel;
+    TMP_Text   hintPanelText;
+
+    // Última cadena medida en el panel de objetivos — el alto solo se recalcula
+    // cuando el texto cambia de verdad, no en cada frame.
+    string lastFittedText;
+
     LevelDefinition builtForLevel;
 
     void Awake()
@@ -64,9 +74,15 @@ public class LevelHUD : MonoBehaviour
 
         if (builtForLevel != lm.CurrentLevel) BuildWordPanel(lm.CurrentLevel);
 
-        int totalSeconds = Mathf.CeilToInt(Mathf.Max(0f, lm.TimeRemaining));
+        bool detective = lm.CurrentLevel != null && lm.CurrentLevel.detectiveMode;
+
+        // En modo detective el reloj sube y NUNCA se pone en rojo: no hay
+        // cuenta atrás que meta prisa, solo un cronómetro que informa.
+        int totalSeconds = detective
+            ? Mathf.FloorToInt(lm.TimeElapsed)
+            : Mathf.CeilToInt(Mathf.Max(0f, lm.TimeRemaining));
         timerText.text  = $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
-        timerText.color = totalSeconds <= 10 ? TimerLow : GoldInk;
+        timerText.color = (!detective && totalSeconds <= 10) ? TimerLow : GoldInk;
 
         // Recordatorio del objetivo SIEMPRE visible mientras dura el nivel —
         // a diferencia de las pistas de CoachMarks (que se ven una sola vez
@@ -81,28 +97,91 @@ public class LevelHUD : MonoBehaviour
             if (lm.ObjectiveComplete)
             {
                 objBg.GetComponent<Image>().color = ParchmentSuccess;
-                objectiveText.text = hasCheckpoints
-                    ? BuildCheckpointText(lm) + "\n" + (es
-                        ? "¡Completado! Cierra la conversación (X) cuando quieras."
-                        : "Terminé ! Ferme la conversation (X) quand tu veux.")
-                    : (es
-                        ? "¡Objetivo conseguido! Sigue hablando para coger más palabras,\no cierra la conversación (X) cuando quieras terminar."
-                        : "Objectif atteint ! Continue à parler pour choper plus de mots,\nou ferme la conversation (X) quand tu veux terminer.");
+                objectiveText.text = detective
+                    ? BuildCaseText(lm) + "\n" + (es
+                        ? "Caso cerrado. Cierra la conversación (X) cuando quieras."
+                        : "Affaire classée. Ferme la conversation (X) quand tu veux.")
+                    : hasCheckpoints
+                        ? BuildCheckpointText(lm) + "\n" + (es
+                            ? "¡Completado! Cierra la conversación (X) cuando quieras."
+                            : "Terminé ! Ferme la conversation (X) quand tu veux.")
+                        : (es
+                            ? "¡Objetivo conseguido! Sigue hablando para coger más palabras,\no cierra la conversación (X) cuando quieras terminar."
+                            : "Objectif atteint ! Continue à parler pour choper plus de mots,\nou ferme la conversation (X) quand tu veux terminer.");
             }
             else
             {
                 objBg.GetComponent<Image>().color = ParchmentDefault;
-                objectiveText.text = hasCheckpoints ? BuildCheckpointText(lm) : lm.CurrentLevel.DisplaySummary;
+                objectiveText.text = detective
+                    ? BuildCaseText(lm)
+                    : hasCheckpoints ? BuildCheckpointText(lm) : lm.CurrentLevel.DisplaySummary;
             }
 
-            int wordCount = lm.CurrentLevel.targetWords.Count;
-            int starSecs  = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds);
-            starsLineText.text = es
-                ? $"Objetivo  ·  {wordCount} palabras  ·  menos de {starSecs}s"
-                : $"Objectif  ·  {wordCount} mots  ·  moins de {starSecs}s";
+            if (detective)
+            {
+                int starMins = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds / 60f);
+                starsLineText.text = es
+                    ? $"Resuelto  ·  El mentiroso  ·  menos de {starMins} min"
+                    : $"Résolu  ·  Le menteur  ·  moins de {starMins} min";
+            }
+            else
+            {
+                int wordCount = lm.CurrentLevel.targetWords.Count;
+                int starSecs  = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds);
+                starsLineText.text = es
+                    ? $"Objetivo  ·  {wordCount} palabras  ·  menos de {starSecs}s"
+                    : $"Objectif  ·  {wordCount} mots  ·  moins de {starSecs}s";
+            }
+
+            // El caso empieza con cuatro objetivos y va sumando hallazgos, así
+            // que el panel no puede tener un alto fijo: o sobra papel al
+            // principio o falta al final. Se ajusta al texto que haya ahora.
+            if (detective) FitBannerToText();
         }
 
         RefreshWordColors(lm);
+    }
+
+    // Ajusta el alto del panel de objetivos a su contenido y baja con él todo
+    // lo que cuelga debajo. Solo recalcula cuando el texto ha cambiado.
+    void FitBannerToText()
+    {
+        if (objectiveText == null || objBg == null) return;
+        if (objectiveText.text == lastFittedText) return;
+        lastFittedText = objectiveText.text;
+
+        var otRT = objectiveText.GetComponent<RectTransform>();
+
+        // preferredHeight solo es fiable con el auto-size apagado: con él
+        // encendido TMP encoge la letra para caber en el rect que ya tiene, y
+        // devolvería el alto actual en vez del que hace falta.
+        // En el primer frame el layout puede no haberse resuelto y rect.width
+        // valer 0; medir con ancho 0 devolvería un alto disparatado.
+        float width = otRT.rect.width > 1f ? otRT.rect.width : 920f;
+        float textH = objectiveText.GetPreferredValues(objectiveText.text, width, 0f).y;
+        otRT.sizeDelta = new Vector2(-40, textH);
+
+        // 8 arriba + 12 de aire + 38 de la línea de estrellas (10 de margen
+        // inferior + 28 de alto), los mismos valores con los que se construyó.
+        float bannerH = Mathf.Clamp(textH + 58f, 120f, 900f);
+        ResizePanel(objBg, new Vector2(960, bannerH), 6f);
+
+        // Mismas separaciones que en el diseño original (el panel medía 150 y
+        // el reloj estaba 15 por debajo, el de palabras 95), pero calculadas
+        // en vez de escritas a mano.
+        float bottom = 20f + bannerH;
+        MovePanel(timerBg,   new Vector2(0,   -(bottom + 15f)));
+        MovePanel(wordPanel, new Vector2(-16, -(bottom + 95f)));
+    }
+
+    // Mueve un panel con su marco — mismo motivo que ResizePanel: el borde es
+    // un hermano, no un hijo, y no se entera de nada por su cuenta.
+    static void MovePanel(GameObject panel, Vector2 pos)
+    {
+        if (panel == null) return;
+        panel.GetComponent<RectTransform>().anchoredPosition = pos;
+        var border = panel.transform.parent.Find(panel.name + "Border");
+        if (border != null) border.GetComponent<RectTransform>().anchoredPosition = pos;
     }
 
     // Lista de retos del nivel (checklist) — mismo patrón negrita+verde que
@@ -122,6 +201,58 @@ public class LevelHUD : MonoBehaviour
             sb.Append(done ? $"<b>{line}</b>" : line);
             if (i < checkpoints.Count - 1) sb.Append('\n');
         }
+        return sb.ToString();
+    }
+
+    // Panel del modo detective: arriba los objetivos (qué hacer), abajo los
+    // hallazgos que se van escribiendo solos en verde según se descubren.
+    //
+    // La zona verde no es adorno. En un juego de idiomas el esfuerzo de
+    // comprensión se come el de deducción: quien está peleando por entender lo
+    // que oye no tiene atención libre para notar que dos frases encajan. Ver
+    // cada dato que ha entendido bien, escrito y en su sitio, le devuelve esa
+    // atención — y poner "Marcel llevaba algo metálico" justo encima de "Marcel
+    // dice que no lleva arma" hace visible la contradicción sin nombrarla.
+    string BuildCaseText(LevelManager lm)
+    {
+        var sb = new System.Text.StringBuilder();
+        var def = lm.CurrentLevel;
+
+        if (def.objectives != null)
+        {
+            for (int i = 0; i < def.objectives.Count; i++)
+            {
+                var obj = def.objectives[i];
+                bool done = true;
+                foreach (var id in obj.requiredIds)
+                    if (!lm.CheckpointsReached.Contains(id)) { done = false; break; }
+
+                string line = $"<color={(done ? CapturedGreenHex : FrenchHexOnLight)}>{obj.DisplayLabel}</color>";
+                sb.Append(done ? $"<b>{line}</b>" : line);
+                if (i < def.objectives.Count - 1) sb.Append('\n');
+            }
+        }
+
+        // Solo se listan los hallazgos YA descubiertos: la lista crece con la
+        // investigación en vez de enseñar de entrada cuántos huecos quedan por
+        // rellenar, que sería contarle al jugador cuánto le falta por deducir.
+        if (def.findings != null)
+        {
+            bool first = true;
+            foreach (var f in def.findings)
+            {
+                if (!lm.CheckpointsReached.Contains(f.id)) continue;
+                if (first)
+                {
+                    sb.Append("\n\n<color=" + CapturedGreenHex + ">");
+                    sb.Append(GameSettings.IsBasic ? "Lo que sabes:" : "Ce que tu sais :");
+                    sb.Append("</color>");
+                    first = false;
+                }
+                sb.Append($"\n<color={CapturedGreenHex}>· {f.DisplayText}</color>");
+            }
+        }
+
         return sb.ToString();
     }
 
@@ -148,6 +279,7 @@ public class LevelHUD : MonoBehaviour
     void BuildWordPanel(LevelDefinition def)
     {
         builtForLevel = def;
+        ApplyLayoutFor(def);
         headerTxt.text = GameSettings.IsBasic ? "Palabras a encontrar" : "Mots à trouver";
         foreach (Transform child in entriesContainer.transform) Destroy(child.gameObject);
         wordEntries.Clear();
@@ -261,7 +393,7 @@ public class LevelHUD : MonoBehaviour
         starsLineText.fontStyle = FontStyles.Italic;
 
         // ── Timer — below the objective banner ──
-        var timerBg = new GameObject("TimerBg", typeof(RectTransform), typeof(Image));
+        timerBg = new GameObject("TimerBg", typeof(RectTransform), typeof(Image));
         timerBg.transform.SetParent(root.transform, false);
         var tbRT = timerBg.GetComponent<RectTransform>();
         tbRT.anchorMin = tbRT.anchorMax = new Vector2(0.5f, 1f);
@@ -323,6 +455,168 @@ public class LevelHUD : MonoBehaviour
         ecRT.anchoredPosition = new Vector2(0, -48);
         ecRT.offsetMin = new Vector2(20, ecRT.offsetMin.y);
         ecRT.offsetMax = new Vector2(-20, ecRT.offsetMax.y);
+
+        // ── Botón de pista + panel donde se lee ──
+        // Abajo a la izquierda, lejos del micro (abajo al centro) para que no
+        // se pulse sin querer mientras se habla. Solo aparece en niveles con
+        // hintAvailable; usarlo cuesta 1 estrella, una sola vez por muchas
+        // pistas que se pidan.
+        hintPanel = new GameObject("HintPanel", typeof(RectTransform), typeof(Image));
+        hintPanel.transform.SetParent(root.transform, false);
+        var hpRT = hintPanel.GetComponent<RectTransform>();
+        hpRT.anchorMin = hpRT.anchorMax = new Vector2(0f, 0f);
+        hpRT.pivot     = new Vector2(0f, 0f);
+        hpRT.anchoredPosition = new Vector2(24, 108);
+        hpRT.sizeDelta = new Vector2(560, 130);
+        var hpImg = hintPanel.GetComponent<Image>();
+        hpImg.sprite = ParchmentSprite.GetPaper(); hpImg.type = Image.Type.Sliced; hpImg.color = ParchmentDefault;
+        AddInkBorder(hintPanel, 5f);
+
+        var hpTxtGO = new GameObject("HintText", typeof(RectTransform));
+        hpTxtGO.transform.SetParent(hintPanel.transform, false);
+        var hptRT = hpTxtGO.GetComponent<RectTransform>();
+        hptRT.anchorMin = Vector2.zero; hptRT.anchorMax = Vector2.one;
+        hptRT.offsetMin = new Vector2(18, 12); hptRT.offsetMax = new Vector2(-18, -12);
+        hintPanelText = hpTxtGO.AddComponent<TextMeshProUGUI>();
+        hintPanelText.fontSize  = 24;
+        hintPanelText.color     = InkBrown;
+        hintPanelText.alignment = TextAlignmentOptions.Center;
+        hintPanelText.enableWordWrapping = true;
+        hintPanelText.enableAutoSizing = true;
+        hintPanelText.fontSizeMin = 17;
+        hintPanelText.fontSizeMax = 24;
+
+        // Tocar el panel lo cierra — sin botón de cerrar, que en un móvil
+        // sería un objetivo más pequeño que el propio panel.
+        var hpBtn = hintPanel.AddComponent<Button>();
+        hpBtn.targetGraphic = hpImg;
+        hpBtn.onClick.AddListener(() => SetHintPanelVisible(false));
+        SetHintPanelVisible(false);
+
+        hintBtn = new GameObject("HintButton", typeof(RectTransform), typeof(Image));
+        hintBtn.transform.SetParent(root.transform, false);
+        var hbRT = hintBtn.GetComponent<RectTransform>();
+        hbRT.anchorMin = hbRT.anchorMax = new Vector2(0f, 0f);
+        hbRT.pivot     = new Vector2(0f, 0f);
+        hbRT.anchoredPosition = new Vector2(24, 28);
+        hbRT.sizeDelta = new Vector2(240, 64);
+        var hbImg = hintBtn.GetComponent<Image>();
+        hbImg.sprite = ParchmentSprite.GetPaper(); hbImg.type = Image.Type.Sliced; hbImg.color = ParchmentDefault;
+        AddInkBorder(hintBtn, 5f);
+
+        var hbTxtGO = new GameObject("HintButtonLabel", typeof(RectTransform));
+        hbTxtGO.transform.SetParent(hintBtn.transform, false);
+        var hbtRT = hbTxtGO.GetComponent<RectTransform>();
+        hbtRT.anchorMin = Vector2.zero; hbtRT.anchorMax = Vector2.one;
+        hbtRT.offsetMin = Vector2.zero; hbtRT.offsetMax = Vector2.zero;
+        hintBtnLabel = hbTxtGO.AddComponent<TextMeshProUGUI>();
+        hintBtnLabel.fontSize  = 22;
+        hintBtnLabel.color     = InkBrown;
+        hintBtnLabel.alignment = TextAlignmentOptions.Center;
+        hintBtnLabel.fontStyle = FontStyles.Bold;
+        hintBtnLabel.raycastTarget = false;
+
+        var hintButton = hintBtn.AddComponent<Button>();
+        hintButton.targetGraphic = hbImg;
+        hintButton.onClick.AddListener(OnHintPressed);
+        SetPanelVisible(hintBtn, false);
+    }
+
+    // Muestra u oculta un panel CON su marco. El borde que crea AddInkBorder
+    // es un GameObject hermano, no un hijo, así que apagar solo el panel
+    // dejaría un marco flotando vacío en pantalla.
+    static void SetPanelVisible(GameObject panel, bool visible)
+    {
+        if (panel == null) return;
+        panel.SetActive(visible);
+        var border = panel.transform.parent.Find(panel.name + "Border");
+        if (border != null) border.gameObject.SetActive(visible);
+    }
+
+    void SetHintPanelVisible(bool visible) => SetPanelVisible(hintPanel, visible);
+
+    void OnHintPressed()
+    {
+        var lm = LevelManager.Instance;
+        if (lm == null || !lm.IsActive || lm.CurrentLevel == null) return;
+
+        var hint = lm.CurrentLevel.NextHint(lm.CheckpointsReached);
+        if (hint == null)
+        {
+            hintPanelText.text = GameSettings.IsBasic
+                ? "Ya lo tienes todo. Ve a cerrar el caso."
+                : "Tu as tout ce qu'il faut. Va classer l'affaire.";
+        }
+        else
+        {
+            // La estrella solo se pierde si la pista dice algo de verdad —
+            // pulsar el botón cuando ya no queda nada que pistar no penaliza.
+            lm.UseHint();
+            hintPanelText.text = hint.DisplayText;
+        }
+
+        SetHintPanelVisible(true);
+        RefreshHintButtonLabel(lm);
+    }
+
+    void RefreshHintButtonLabel(LevelManager lm)
+    {
+        if (hintBtnLabel == null) return;
+        bool es = GameSettings.IsBasic;
+        hintBtnLabel.text = lm != null && lm.HintUsed
+            ? (es ? "Pista" : "Indice")
+            : (es ? "Pista  (-1 estrella)" : "Indice  (-1 étoile)");
+    }
+
+    // El HUD se construye una vez con la forma de un nivel débutant (una línea
+    // de objetivo y ya). Un caso trae cuatro objetivos y hasta ocho hallazgos,
+    // así que el panel de arriba pasa de 150 a 430 px y todo lo que colgaba
+    // debajo baja con él. Se aplica al cambiar de nivel, no en cada frame.
+    void ApplyLayoutFor(LevelDefinition def)
+    {
+        bool detective = def != null && def.detectiveMode;
+
+        // En modo detective el texto es una lista, y una lista centrada se lee
+        // mucho peor que alineada a la izquierda. Y el auto-size se apaga: el
+        // panel crece para caber el texto, no al revés — encoger la letra para
+        // meter cuatro objetivos y ocho hallazgos en un rect fijo acabaría en
+        // un cuerpo ilegible.
+        objectiveText.alignment        = detective ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
+        objectiveText.enableAutoSizing = !detective;
+        if (detective) objectiveText.fontSize = 22;
+        objectiveText.fontSizeMin = 19;
+        objectiveText.fontSizeMax = 27;
+
+        lastFittedText = null; // fuerza recalcular el alto al entrar al nivel
+
+        if (detective)
+        {
+            FitBannerToText();
+        }
+        else
+        {
+            ResizePanel(objBg, new Vector2(960, 150), 6f);
+            objectiveText.GetComponent<RectTransform>().sizeDelta = new Vector2(-40, 100);
+            MovePanel(timerBg,   new Vector2(0,   -185));
+            MovePanel(wordPanel, new Vector2(-16, -265));
+        }
+
+        bool showHint = def != null && def.hintAvailable && def.hints != null && def.hints.Count > 0;
+        SetPanelVisible(hintBtn, showHint);
+        SetHintPanelVisible(false);
+        RefreshHintButtonLabel(LevelManager.Instance);
+    }
+
+    // Redimensiona un panel y su marco a la vez. AddInkBorder copia el tamaño
+    // en el momento de construir, así que cambiar solo el panel dejaría el
+    // marco del tamaño viejo.
+    static void ResizePanel(GameObject panel, Vector2 size, float borderPad)
+    {
+        if (panel == null) return;
+        panel.GetComponent<RectTransform>().sizeDelta = size;
+        var border = panel.transform.parent.Find(panel.name + "Border");
+        if (border != null)
+            border.GetComponent<RectTransform>().sizeDelta = size + new Vector2(borderPad * 2f, borderPad * 2f);
     }
 
     // Marco tipo tinta detrás de un panel de tamaño fijo — mismo efecto que

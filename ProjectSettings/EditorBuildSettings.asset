@@ -20,9 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Mercado.unity
     guid: 3990e46e51c85824ab421148a91bd9be
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/BarDragonVerde.unity
-    guid: 79a81b0fb4c882b43ad85ac9ff9cd576
+    guid: 2f9fdfd67eb63cf408d910d3de0f0aec
   - enabled: 1
     path: Assets/Scenes/Auberge.unity
     guid: 649271a6ab1963746aa80c1f84b65570
@@ -32,9 +32,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Salida.unity
     guid: 9af8bae1d6cb5864b815508335a1fd13
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/BarDragonVerde.unity
-    guid: 79a81b0fb4c882b43ad85ac9ff9cd576
+    guid: 2f9fdfd67eb63cf408d910d3de0f0aec
   - enabled: 1
     path: Assets/Scenes/Muelle.unity
     guid: 80ddc5571fd79984b9507de45bec7ef4
@@ -59,4 +59,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/VillaFrancois.unity
     guid: 3acf242f48d2f89418bd167cc681dc94
+  - enabled: 1
+    path: Assets/Scenes/SalonCondesa.unity
+    guid: d6268a4c3c1bed74e9739739a538c98c
   m_configObjects: {}

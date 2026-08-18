@@ -6,7 +6,7 @@ using UnityEngine;
 //
 // La frase de entrada NO viene del servidor: se muestra al abrir, antes de
 // gastar un turno de conversación. En un caso de misterio eso importa más que
-// en modo débutant, porque dos de ellas (la de Denis presentándose y la de
+// en modo débutant, porque dos de ellas (la de Marcel presentándose y la de
 // Fabre dando por hecho que fue un robo) son piezas del caso, y no pueden
 // depender de que el modelo se acuerde de decirlas en su primera respuesta.
 [RequireComponent(typeof(InteractIndicator))]

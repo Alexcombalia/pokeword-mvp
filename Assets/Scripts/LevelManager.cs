@@ -12,6 +12,13 @@ public class LevelManager : MonoBehaviour
     public LevelDefinition CurrentLevel     { get; private set; }
     public bool            IsActive         { get; private set; }
     public float           TimeRemaining    { get; private set; }
+
+    // Modo detective: el reloj SUBE ("llevas 6:42 investigando") y el caso no
+    // se pierde nunca por tiempo. Es una regla de público objetivo, no de
+    // dificultad: una cuenta atrás es exactamente lo que calla a alguien al
+    // que ya le da vergüenza hablar. El tiempo se sigue midiendo para la
+    // estrella y para comparar con amigos, pero no puede hacer perder.
+    public float           TimeElapsed      { get; private set; }
     public bool            ObjectiveComplete{ get; private set; }
     public bool            HintUsed         { get; private set; }
 
@@ -59,6 +66,12 @@ public class LevelManager : MonoBehaviour
         // — el jugador puede seguir hablando para intentar la estrella de
         // palabras/velocidad hasta que cierre la conversación o se acabe el
         // tiempo (ver ReportObjectiveComplete / FinishLevelNow).
+        if (CurrentLevel != null && CurrentLevel.detectiveMode)
+        {
+            TimeElapsed += Time.deltaTime;
+            return; // sin límite duro: un caso no se pierde por tiempo
+        }
+
         TimeRemaining -= Time.deltaTime;
         if (TimeRemaining <= 0f)
         {
@@ -74,6 +87,7 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel      = def;
         TimeRemaining     = def.timeLimitSeconds;
+        TimeElapsed       = 0f;
         ObjectiveComplete = false;
         HintUsed          = false;
         SkipCount         = 0;
@@ -90,10 +104,15 @@ public class LevelManager : MonoBehaviour
         // avancé sin tocarlo (ver plan: sección 5).
         GameSettings.Difficulty = id >= 6 ? "medium" : "basic";
 
-        CoachMarks.Instance?.ShowOnce("timer",
-            GameSettings.IsBasic
-                ? "El tiempo empieza en cuanto entras — ¡date prisa!"
-                : "Le temps commence dès que tu entres — dépêche-toi !",
+        // En modo detective el aviso es el contrario: el reloj está ahí pero
+        // no persigue a nadie. Decirle "date prisa" a un jugador al que le da
+        // vergüenza hablar es justo lo que no queremos.
+        CoachMarks.Instance?.ShowOnce(def.detectiveMode ? "timer_case" : "timer",
+            def.detectiveMode
+                ? "Le temps monte, mais on ne perd jamais une affaire par le temps. Prends ton temps."
+                : (GameSettings.IsBasic
+                    ? "El tiempo empieza en cuanto entras — ¡date prisa!"
+                    : "Le temps commence dès que tu entres — dépêche-toi !"),
             new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -260), new Vector2(340, 70));
 
         SceneManager.LoadScene(def.sceneName);
@@ -129,6 +148,21 @@ public class LevelManager : MonoBehaviour
         if (!IsActive || CurrentLevel?.checkpoints == null || ids == null) return;
 
         foreach (var id in ids) CheckpointsReached.Add(id);
+
+        // Acusar al inocente pierde el caso, y lo pierde EN EL ACTO — no al
+        // cerrar la conversación, como pasa al ganar. Es deliberado: el
+        // jugador acaba de dar un nombre y el juego tiene que responderle
+        // inmediatamente, sin dejarle seguir hablando como si nada.
+        //
+        // Antes de esto un caso solo podía perderse por tiempo, y en modo
+        // detective el tiempo no hace perder, así que literalmente no había
+        // forma de fallar un caso.
+        if (!string.IsNullOrEmpty(CurrentLevel.failCheckpoint)
+            && CheckpointsReached.Contains(CurrentLevel.failCheckpoint))
+        {
+            EndLevel(false);
+            return;
+        }
 
         if (CurrentLevel.checkpoints.TrueForAll(c => CheckpointsReached.Contains(c.id)))
             ReportObjectiveComplete();
@@ -237,11 +271,30 @@ public class LevelManager : MonoBehaviour
         IsActive = false;
         NPCVoicePlayer.Instance?.Stop(); // corta la voz de Jacques si seguía sonando
 
-        float elapsed = CurrentLevel.timeLimitSeconds - TimeRemaining;
+        float elapsed = CurrentLevel.detectiveMode
+            ? TimeElapsed
+            : CurrentLevel.timeLimitSeconds - TimeRemaining;
 
         bool starObjective = success;
-        bool starWords = CurrentLevel.targetWords.Count > 0 &&
-                          CapturedTargetCount() >= CurrentLevel.targetWords.Count;
+
+        // La 2ª estrella cambia de significado en modo detective: no es haber
+        // capturado todas las palabras sino haber roto al mentiroso en un
+        // careo (★ Le menteur). El caso se puede resolver deduciendo, sin
+        // pasar por ahí — por eso es estrella y no requisito.
+        // La 2ª estrella la decide el NIVEL, no el modo. Si define
+        // secondStarCheckpoint es un reto concreto (en avancé, romper al
+        // mentiroso); si no, se cae a la estrella de palabras.
+        //
+        // Esto importa desde que los casos débutant sustituyen a la campaña
+        // vieja: un principiante está ahí para aprender vocabulario, así que
+        // sus casos siguen premiando capturar palabras, mientras que en avancé
+        // —donde ya se habla francés— el segundo reto es el careo. Mismo modo
+        // detective, distinta segunda estrella, sin ramas por dificultad.
+        bool starWords = !string.IsNullOrEmpty(CurrentLevel.secondStarCheckpoint)
+            ? CheckpointsReached.Contains(CurrentLevel.secondStarCheckpoint)
+            : (CurrentLevel.targetWords.Count > 0 &&
+               CapturedTargetCount() >= CurrentLevel.targetWords.Count);
+
         bool starSpeed = success && elapsed <= CurrentLevel.starTimeSeconds;
 
         int rawStars = (starObjective ? 1 : 0) + (starWords ? 1 : 0) + (starSpeed ? 1 : 0);

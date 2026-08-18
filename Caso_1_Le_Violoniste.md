@@ -11,12 +11,12 @@
 | | |
 |---|---|
 | **Escena** | **Una sola: `BarDragonVerde.unity`**, revestida como el café *Le Dragon Vert*. Sin cambios de escena en todo el nivel. |
-| **NPCs** | 4, todos dentro del bar: Odette, Corentin, Denis y el comisario Fabre |
+| **NPCs** | 4, todos dentro del bar: Odette, Corentin, Marcel y el comisario Fabre |
 | **Duración estimada** | ~30 turnos de conversación ≈ 13-15 min reales (con voz) |
 | **Crimen** | Homicidio por arma de fuego. **Nunca se muestra nada.** No hay cadáver en pantalla, no hay sangre, no hay violencia visual. |
 | **Tipo de caso** | Tutorial de deducción: una combinación real, dos mentiras verificables, un culpable detenible |
 | **★ Résolu** | El comisario Fabre acepta la acusación |
-| **★ Le menteur** | Hacer que Denis se rompa confrontándole con sus **dos** mentiras |
+| **★ Le menteur** | Hacer que Marcel se rompa confrontándole con sus **dos** mentiras |
 | **★ Chronomètre** | Terminar por debajo de **24 minutos** (cronómetro ascendente, no se pierde nunca por tiempo) |
 
 > **Cambio de nombre:** el café se llamaba *Café Pélican* en las versiones anteriores. Pasa a ser **Le Dragon Vert** para reutilizar la escena existente sin renombrar nada en Unity. La víctima se llamaba Fabre en el relato original; es **Toussaint**, porque Fabre es el comisario.
@@ -43,7 +43,7 @@ El panel de arriba (`LevelHUD`) tiene **dos zonas**.
 **Objetivos (blanco, 4, visibles desde el principio).** Se tachan al cumplirse. Dicen a quién hablar, nunca qué deducir.
 - ☐ Hablar con Odette: qué vio anoche
 - ☐ Hacer hablar a Corentin de la pieza musical
-- ☐ Pillar a Denis en dos mentiras
+- ☐ Pillar a Marcel en dos mentiras
 - ☐ Contarle al comisario Fabre lo que pasó
 
 **Hallazgos (verde, empiezan vacíos).** Cada vez que un NPC suelta un dato clave, aparece **escrito en verde** una línea nueva en el panel, con una pequeña animación de entrada. El jugador no escribe nada: es un registro automático de lo que ya ha oído.
@@ -51,15 +51,15 @@ El panel de arriba (`LevelHUD`) tiene **dos zonas**.
 | Bandera | Línea que aparece en verde |
 |---|---|
 | `o_signal` | Marius cambió de pieza y cortó el turno 10 minutos antes |
-| `o_metal` | Denis llevaba algo metálico bajo el abrigo |
-| `o_exit` | Denis salió justo cuando paró la música |
-| `o_asked` | Denis preguntó esa tarde por los horarios y la salida de Marius |
+| `o_metal` | Marcel llevaba algo metálico bajo el abrigo |
+| `o_exit` | Marcel salió justo cuando paró la música |
+| `o_asked` | Marcel preguntó esa tarde por los horarios y la salida de Marius |
 | `c_signal` | La pieza era una señal: *«vete, alguien te busca»* |
 | `c_someone_asked` | Alguien preguntó por Marius esa tarde. Corentin no sabe quién |
-| `d_lie_gun` | Denis dice que no lleva arma desde que se retiró |
-| `d_lie_time` | Denis dice que se fue mucho antes del disparo |
+| `m_lie_gun` | Marcel dice que no lleva arma desde que se retiró |
+| `m_lie_time` | Marcel dice que se fue mucho antes del disparo |
 
-**Por qué esto importa más de lo que parece.** En un juego de idiomas, el esfuerzo de comprensión se come el esfuerzo de deducción: un jugador que pelea por entender lo que oye no tiene atención libre para notar que dos frases encajan. El panel verde le devuelve esa atención — le confirma que ha entendido bien y deja el trabajo mental donde debe estar, en relacionar. Además, ver `d_lie_gun` justo debajo de `o_metal` hace visible la contradicción sin nombrarla.
+**Por qué esto importa más de lo que parece.** En un juego de idiomas, el esfuerzo de comprensión se come el esfuerzo de deducción: un jugador que pelea por entender lo que oye no tiene atención libre para notar que dos frases encajan. El panel verde le devuelve esa atención — le confirma que ha entendido bien y deja el trabajo mental donde debe estar, en relacionar. Además, ver `m_lie_gun` justo debajo de `o_metal` hace visible la contradicción sin nombrarla.
 
 **Lo que el panel nunca hace:** decir que algo es una mentira, marcar a un sospechoso, o sugerir una conclusión. Solo transcribe hechos oídos.
 
@@ -67,13 +67,13 @@ El panel de arriba (`LevelHUD`) tiene **dos zonas**.
 
 ## 4. La verdad del caso (nunca se cuenta entera, se deduce)
 
-Denis Charrier, antiguo gendarme apartado del cuerpo, lleva meses vendiendo nombres a un contacto colaboracionista. **No lo hace por dinero: cobra en papeles.** Tiene un visado de salida a nombre de su mujer y sus dos hijos, casi listo. Es su única forma de sacarlos de Francia.
+Marcel Charrier, antiguo gendarme apartado del cuerpo, lleva meses vendiendo nombres a un contacto colaboracionista. **No lo hace por dinero: cobra en papeles.** Tiene un visado de salida a nombre de su mujer y sus dos hijos, casi listo. Es su única forma de sacarlos de Francia.
 
-Marius lo descubrió y le dio un plazo para parar, amenazando con contarlo en el café — donde Denis sigue siendo "uno de los nuestros". Si Marius hablaba, Denis perdía los papeles y su familia se quedaba aquí.
+Marius lo descubrió y le dio un plazo para parar, amenazando con contarlo en el café — donde Marcel sigue siendo "uno de los nuestros". Si Marius hablaba, Marcel perdía los papeles y su familia se quedaba aquí.
 
-Esa tarde Denis anduvo preguntando por los horarios de Marius y por **qué puerta sale al terminar**. Alguien se lo comentó a Corentin, que se alarmó y le lanzó a Marius la señal acordada: cambiar la pieza y cortar antes. Marius entendió, dejó el violín en la barra y salió por el callejón para desaparecer.
+Esa tarde Marcel anduvo preguntando por los horarios de Marius y por **qué puerta sale al terminar**. Alguien se lo comentó a Corentin, que se alarmó y le lanzó a Marius la señal acordada: cambiar la pieza y cortar antes. Marius entendió, dejó el violín en la barra y salió por el callejón para desaparecer.
 
-Denis se levantó y salió por la puerta principal **en el instante en que la música paró**. Rodeó la manzana. Cinco minutos después sonó el disparo.
+Marcel se levantó y salió por la puerta principal **en el instante en que la música paró**. Rodeó la manzana. Cinco minutos después sonó el disparo.
 
 **La ironía que sostiene el caso: la señal que debía salvar a Marius es lo que lo puso en el callejón antes de tiempo.**
 
@@ -81,12 +81,12 @@ Denis se levantó y salió por la puerta principal **en el instante en que la m�
 
 | Hora | Qué pasó | Quién lo sabe |
 |---|---|---|
-| ~17:30 | Denis pregunta por los horarios de Marius y por qué puerta sale | Odette (lo vivió, no le dio importancia) |
+| ~17:30 | Marcel pregunta por los horarios de Marius y por qué puerta sale | Odette (lo vivió, no le dio importancia) |
 | ~21:00 | A Corentin le llega que alguien anda preguntando por Marius. No le dicen quién | Corentin |
 | 22:00 | Empieza el último turno de Marius. Debería tocar hasta las 23:10 | Todos |
 | 22:50 | Corentin le pide la pieza acordada. Marius la toca: es la señal — *"alguien pregunta por ti, vete"* | Corentin (y Marius) |
 | 23:00 | Marius corta a media pieza, deja el violín en la barra y sale por la puerta trasera | Odette, Corentin |
-| 23:00-23:01 | Denis se levanta y sale por la puerta principal, sin terminar su copa | Odette (le extrañó, no lo relacionó) |
+| 23:00-23:01 | Marcel se levanta y sale por la puerta principal, sin terminar su copa | Odette (le extrañó, no lo relacionó) |
 | ~23:05 | El disparo, en el callejón | Todo el café lo oyó |
 | 23:15 | Corentin sale a por cajas y lo encuentra | Corentin |
 
@@ -98,23 +98,23 @@ El corazón del caso: **ningún NPC nombra a un sospechoso.** El jugador une dos
 
 1. **Odette** entrega cuatro hechos en bruto, los cuatro normalizados, ninguno presentado como sospechoso.
 2. **Corentin** (una vez se abre) explica que la pieza era una señal, y que **esa tarde alguien estuvo preguntando por los horarios de Marius y por su salida**. → **No sabe quién fue. Se lo contaron.**
-3. **← AQUÍ ESTÁ EL CASO.** Corentin tiene la *importancia* del dato; Odette tiene el *nombre* pero cree que no significa nada. **El jugador es la única persona del café que tiene las dos mitades.** El que preguntaba por la puerta de salida es el que Odette mencionó de pasada: Denis.
-4. Con eso, el jugador puede apretar a **Denis**, que suelta **dos mentiras**:
+3. **← AQUÍ ESTÁ EL CASO.** Corentin tiene la *importancia* del dato; Odette tiene el *nombre* pero cree que no significa nada. **El jugador es la única persona del café que tiene las dos mitades.** El que preguntaba por la puerta de salida es el que Odette mencionó de pasada: Marcel.
+4. Con eso, el jugador puede apretar a **Marcel**, que suelta **dos mentiras**:
    - **Mentira A (el arma):** contradice **[O2]**.
    - **Mentira B (la hora):** contradice **[O3]**. No solo estaba: se fue en el minuto exacto que le daba tiempo.
-5. Con las dos contradicciones dichas en voz alta, **Denis se rompe** y confiesa.
+5. Con las dos contradicciones dichas en voz alta, **Marcel se rompe** y confiesa.
 6. **Comisario Fabre**: nombre + las dos mentiras + la premeditación de la tarde.
 
 **Regla de oro de este caso:** *el jugador nunca recibe una conclusión, solo materia prima. Las únicas conclusiones que se pronuncian en todo el caso las pronuncia el jugador.*
 
-### 5.1 Cómo aparece el nombre de Denis (importante)
+### 5.1 Cómo aparece el nombre de Marcel (importante)
 
-El jugador no puede preguntarle a Odette por Denis si no sabe que Denis existe. Se resuelve por partida doble, sin depender de que pregunte bien:
+El jugador no puede preguntarle a Odette por Marcel si no sabe que Marcel existe. Se resuelve por partida doble, sin depender de que pregunte bien:
 
-- **Denis está a la vista en el bar desde el primer segundo**, en la barra, y es el único que **saluda al jugador él mismo** cuando pasa cerca: se ofrece a ayudar *de policía a policía*. Se presenta con nombre y apellido.
-- Y si el jugador le pregunta a Odette cualquier cosa del tipo *"¿quién estaba anoche?"*, ella nombra a los tres habituales, Denis incluido, sin darle relieve.
+- **Marcel está a la vista en el bar desde el primer segundo**, en la barra, y es el único que **saluda al jugador él mismo** cuando pasa cerca: se ofrece a ayudar *de policía a policía*. Se presenta con nombre y apellido.
+- Y si el jugador le pregunta a Odette cualquier cosa del tipo *"¿quién estaba anoche?"*, ella nombra a los tres habituales, Marcel incluido, sin darle relieve.
 
-Denis siendo el NPC más accesible del bar es deliberado: su cordialidad es su escudo, y hace que el jugador hable con el culpable antes de sospechar de él.
+Marcel siendo el NPC más accesible del bar es deliberado: su cordialidad es su escudo, y hace que el jugador hable con el culpable antes de sospechar de él.
 
 ---
 
@@ -126,9 +126,9 @@ Denis siendo el NPC más accesible del bar es deliberado: su cordialidad es su e
 | Qué sabe | Cómo lo cuenta |
 |---|---|
 | **[O1]** Marius cambió la pieza y cortó el turno diez minutos antes. Dejó el violín en la barra y salió por detrás | Como rareza de artista |
-| **[O2]** Anoche Denis llevaba algo metálico bajo el abrigo; él mismo le dijo, como siempre, que es su arma de cuando era gendarme | Como manía inofensiva de un viejo conocido. **Con cariño, no con miedo** |
-| **[O3]** Denis se levantó y salió justo cuando la música paró. Nunca se va sin terminar la copa | Como anécdota |
-| **[O4]** Esa tarde Denis estuvo preguntando por los horarios de Marius y por qué puerta salía al acabar | Con naturalidad total, como manía de policía |
+| **[O2]** Anoche Marcel llevaba algo metálico bajo el abrigo; él mismo le dijo, como siempre, que es su arma de cuando era gendarme | Como manía inofensiva de un viejo conocido. **Con cariño, no con miedo** |
+| **[O3]** Marcel se levantó y salió justo cuando la música paró. Nunca se va sin terminar la copa | Como anécdota |
+| **[O4]** Esa tarde Marcel estuvo preguntando por los horarios de Marius y por qué puerta salía al acabar | Con naturalidad total, como manía de policía |
 | **[O5]** El disparo se oyó desde dentro, unos minutos después de que Marius saliera | Sin dramatismo |
 
 **Nunca hace:** decir que algo es sospechoso · usar las palabras *asesino, culpable, raro, mentira* · sacar conclusiones · señalar a nadie.
@@ -147,7 +147,7 @@ Denis siendo el NPC más accesible del bar es deliberado: su cordialidad es su e
 | **[C1]** Lo básico de la noche: horarios, que Marius salió por atrás, que él lo encontró a las 23:15 | Abierto |
 | **[C2]** La pieza y el corte de turno eran **una señal acordada** con Marius | **Cerrado hasta que el jugador le mencione la pieza cambiada o el turno corto** |
 | **[C3]** Esa tarde le llegó que **alguien había estado preguntando por los horarios de Marius y por qué puerta sale**. Por eso dio la señal | Se abre con [C2] |
-| **[C4]** **No sabe quién preguntaba.** Se lo contaron de pasada y no preguntó el nombre | Innegociable. **Nunca dice "Denis".** |
+| **[C4]** **No sabe quién preguntaba.** Se lo contaron de pasada y no preguntó el nombre | Innegociable. **Nunca dice "Marcel".** |
 | **[C5]** Culpa: la señal era para salvarlo y es lo que lo sacó antes al callejón | Solo si el jugador insiste en cómo está él |
 
 **El candado es de voluntad, no de memoria.** Corentin *no quiere* hablar de la señal: si le preguntan de frente, minimiza. Se abre cuando el jugador demuestra que ya sabe que la pieza significaba algo. Hacerle "olvidar" datos no sería sostenible.
@@ -156,7 +156,7 @@ Denis siendo el NPC más accesible del bar es deliberado: su cordialidad es su e
 
 ---
 
-### 6.3 DENIS CHARRIER, 44 — cliente habitual, antiguo gendarme — **EL CULPABLE**
+### 6.3 MARCEL CHARRIER, 44 — cliente habitual, antiguo gendarme — **EL CULPABLE**
 **Cordial, servicial, encantado de ayudar en la investigación.** Esa colaboración es su escudo.
 
 | Qué dice | Verdad |
@@ -188,15 +188,15 @@ Mismo personaje en los cinco casos. Cansado, correcto, sin ganas de complicarse.
 **No escucha las conversaciones del café.** Si el jugador le dice *"usted ya lo ha oído"*, contesta que él no está ahí para escuchar. Todo hay que contárselo.
 
 **Valida tres cosas:**
-1. **`f_name`** — el jugador acusa a **Denis Charrier**
+1. **`f_name`** — el jugador acusa a **Marcel Charrier**
 2. **`f_lies`** — expone **las dos mentiras** (el arma y la hora de salida)
-3. **`f_motive`** — Denis preguntó esa tarde por la salida de Marius → lo estaba esperando (premeditación)
+3. **`f_motive`** — Marcel preguntó esa tarde por la salida de Marius → lo estaba esperando (premeditación)
 
 **Comportamiento:**
 - **No acepta un nombre suelto.**
 - **Acusación equivocada = no se pierde el caso.** Dice por qué no le cuadra y el jugador vuelve a investigar. Solo cuesta tiempo.
 - **No corrige el francés.** Si entiende, acepta. **Innegociable.**
-- **No hace falta la confesión de Denis para resolver.** Con las dos mentiras confirmadas por Odette, Fabre da la orden. La confesión cambia el epílogo, no el resultado.
+- **No hace falta la confesión de Marcel para resolver.** Con las dos mentiras confirmadas por Odette, Fabre da la orden. La confesión cambia el epílogo, no el resultado.
 - Si el jugador menciona lo de los nombres vendidos, lo aparta: el cargo es homicidio. **El comisario nunca se convierte en un canal de delación.**
 
 ---
@@ -211,13 +211,13 @@ Son las líneas que **no cambian nunca**, literales, mismo patrón híbrido que 
 > « Hier soir, il a joué un autre morceau. Pas le sien. Et il a arrêté dix minutes plus tôt. Il n'avait jamais fait ça. Des idées d'artiste, allez savoir. »
 
 **2. [O2] El objeto metálico bajo el abrigo**
-> « Denis avait quelque chose de métallique sous son manteau. Il m'a dit que c'était son arme, comme d'habitude. Un vieux gendarme, ça garde ses habitudes. »
+> « Marcel avait quelque chose de métallique sous son manteau. Il m'a dit que c'était son arme, comme d'habitude. Un vieux gendarme, ça garde ses habitudes. »
 
-**3. [O3] Denis saliendo al parar la música**
-> « Quand la musique s'est arrêtée, Denis s'est levé et il est sorti. Il n'a rien dit, il a laissé son verre à moitié plein. Ça, c'était la première fois. »
+**3. [O3] Marcel saliendo al parar la música**
+> « Quand la musique s'est arrêtée, Marcel s'est levé et il est sorti. Il n'a rien dit, il a laissé son verre à moitié plein. Ça, c'était la première fois. »
 
-**4. [O4] Denis preguntando esa tarde**
-> « Cet après-midi-là, Denis posait des questions sur Marius. Ses horaires, par quelle porte il sortait après son service. C'est sa manie de policier. Il pose des questions depuis vingt ans. »
+**4. [O4] Marcel preguntando esa tarde**
+> « Cet après-midi-là, Marcel posait des questions sur Marius. Ses horaires, par quelle porte il sortait après son service. C'est sa manie de policier. Il pose des questions depuis vingt ans. »
 
 ### Corentin — registro cerrado y seco al principio; luego culpable
 
@@ -233,7 +233,7 @@ Son las líneas que **no cambian nunca**, literales, mismo patrón híbrido que 
 **8. [C5] Su culpa**
 > « Le signal, c'était pour le sauver. C'est moi qui l'ai envoyé dans cette ruelle. Dix minutes trop tôt. »
 
-### Denis — registro cordial y colaborador; luego seco
+### Marcel — registro cordial y colaborador; luego seco
 
 **9. [D1] Mentira A — el arma**
 > « Mon arme ? Je ne la porte plus depuis le jour où j'ai rendu ma plaque. »
@@ -251,8 +251,8 @@ Son las líneas que **no cambian nunca**, literales, mismo patrón híbrido que 
 
 | Cuándo | Línea |
 |---|---|
-| Denis se presenta al jugador | « Un ancien de la maison. Si je peux vous aider, de policier à policier. » |
-| Denis con **una sola** contradicción | « Je me trompe d'heure, j'ai cinquante ans. » / « Je la porte de temps en temps. Et alors ? » |
+| Marcel se presenta al jugador | « Un ancien de la maison. Si je peux vous aider, de policier à policier. » |
+| Marcel con **una sola** contradicción | « Je me trompe d'heure, j'ai cinquante ans. » / « Je la porte de temps en temps. Et alors ? » |
 | Odette si le preguntan quién fue | « Je ne suis pas de la police, moi. Et ici, il n'y a pas de gens comme ça. » |
 | Corentin si le preguntan por el cuerpo | « Je ne veux pas en parler. » |
 | Fabre, su posición de partida | « Un vol qui a mal tourné. Ça arrive, dans ce quartier. » |
@@ -283,7 +283,7 @@ Son las líneas que **no cambian nunca**, literales, mismo patrón híbrido que 
 | Cómo se cierra | Epílogo |
 |---|---|
 | **Con confesión** (★ Le menteur) | El jugador sabe lo de los visados y la familia. Cierre amargo: hay un culpable y no hay alivio. Corentin se entera de que su señal fue lo que lo sacó al callejón |
-| **Sin confesión** | Denis es detenido igual por las dos mentiras, en silencio. El motivo nunca se sabe. Cierre más frío y más ambiguo — también válido |
+| **Sin confesión** | Marcel es detenido igual por las dos mentiras, en silencio. El motivo nunca se sabe. Cierre más frío y más ambiguo — también válido |
 | **Sin abrir a Corentin** | Se resuelve con [O2] + [O3], pero **la pieza musical queda sin explicar**. El jugador gana sin entender por qué Marius salió antes. Deliberadamente insatisfactorio |
 
 ---
@@ -294,20 +294,20 @@ Son las líneas que **no cambian nunca**, literales, mismo patrón híbrido que 
 |---|---|
 | `o_signal` | Odette cuenta lo de la pieza cambiada y el turno corto |
 | `o_metal` | Odette cuenta lo del objeto metálico bajo el abrigo |
-| `o_exit` | Odette cuenta que Denis salió al parar la música |
-| `o_asked` | Odette menciona que Denis preguntaba esa tarde por Marius |
+| `o_exit` | Odette cuenta que Marcel salió al parar la música |
+| `o_asked` | Odette menciona que Marcel preguntaba esa tarde por Marius |
 | `c_signal` | Corentin admite que era una señal |
 | `c_someone_asked` | Corentin dice que alguien preguntó por los horarios y la salida |
-| `d_lie_gun` | Denis afirma no llevar arma desde que se retiró |
-| `d_lie_time` | Denis afirma haberse ido mucho antes del disparo |
-| `d_confront_gun` | **Interna.** El jugador le ha puesto delante la contradicción del arma |
-| `d_confront_time` | **Interna.** El jugador le ha puesto delante la contradicción de la hora |
-| `d_broken` | Denis confiesa. **Puerta dura: solo si `d_confront_gun` Y `d_confront_time` ya están marcadas** |
+| `m_lie_gun` | Marcel afirma no llevar arma desde que se retiró |
+| `m_lie_time` | Marcel afirma haberse ido mucho antes del disparo |
+| `m_confront_gun` | **Interna.** El jugador le ha puesto delante la contradicción del arma |
+| `m_confront_time` | **Interna.** El jugador le ha puesto delante la contradicción de la hora |
+| `m_broken` | Marcel confiesa. **Puerta dura: solo si `m_confront_gun` Y `m_confront_time` ya están marcadas** |
 | `f_name`, `f_lies`, `f_motive` | Validaciones de Fabre |
 
-Los ocho primeros de la tabla (hasta `d_lie_time`) son los que pintan línea verde en el panel (§3). `d_broken` da ★ Le menteur. Los tres de Fabre cierran el caso.
+Los ocho primeros de la tabla (hasta `m_lie_time`) son los que pintan línea verde en el panel (§3). `m_broken` da ★ Le menteur. Los tres de Fabre cierran el caso.
 
-**Las dos banderas `d_confront_*` no estaban en el diseño original**; se añadieron al programar el servidor (14/08/2026). Sin ellas el modelo tenía que juzgar "¿me han dicho ya las dos cosas?" de memoria en cada turno, que es justo el tipo de decisión que no sostiene. Convertidas en checkpoints propios, la condición de `d_broken` pasa a ser una comprobación mecánica sobre una lista que el propio modelo ya mantiene. **Son internas: no se muestran al jugador ni pintan línea verde.**
+**Las dos banderas `d_confront_*` no estaban en el diseño original**; se añadieron al programar el servidor (14/08/2026). Sin ellas el modelo tenía que juzgar "¿me han dicho ya las dos cosas?" de memoria en cada turno, que es justo el tipo de decisión que no sostiene. Convertidas en checkpoints propios, la condición de `m_broken` pasa a ser una comprobación mecánica sobre una lista que el propio modelo ya mantiene. **Son internas: no se muestran al jugador ni pintan línea verde.**
 
 ---
 
@@ -316,7 +316,7 @@ Los ocho primeros de la tabla (hasta `d_lie_time`) son los que pintan línea ver
 **Escena `BarDragonVerde.unity`:**
 - **Borrar** `NPC_Henry` y `NPC_clientebar` y sus colliders asociados (`Collider_NPC1`, `Collider_NPC1 (2)`).
 - **Borrar o desactivar** `SceneExitMercado` y su `ExitHintMercado`: el nivel es de escena única.
-- **Colocar 4 NPCs nuevos**: Odette (detrás de la barra, con el violín encima), Corentin (al fondo), Denis (en la barra, el más cercano a la entrada), Fabre (mesa junto a la puerta).
+- **Colocar 4 NPCs nuevos**: Odette (detrás de la barra, con el violín encima), Corentin (al fondo), Marcel (en la barra, el más cercano a la entrada), Fabre (mesa junto a la puerta).
 
 **Scripts nuevos, uno por personaje** (nada de NPC genérico, para evitar confusiones):
 
@@ -324,18 +324,23 @@ Los ocho primeros de la tabla (hasta `d_lie_time`) son los que pintan línea ver
 |---|---|---|
 | Odette | `OdetteNPC.cs` + `OdetteChatClient.cs` | `/npc/odette` |
 | Corentin | `CorentinNPC.cs` + `CorentinChatClient.cs` | `/npc/corentin` |
-| Denis | `DenisNPC.cs` + `DenisChatClient.cs` | `/npc/denis` |
+| Marcel | `MarcelNPC.cs` + `MarcelChatClient.cs` | `/npc/marcel` |
 | Fabre | `FabreNPC.cs` + `FabreChatClient.cs` | `/npc/fabre` |
 
 Patrón de referencia: `JacquesChatClient.cs` (híbrido guionizado + IA).
 
-**Cambios de sistema:**
-- Zona de **hallazgos en verde** en `LevelHUD` (§3), con animación de entrada.
-- **Cronómetro ascendente** sin límite: `timeLimitSeconds` ignorado en modo detective, `starTimeSeconds` = 24 min.
-- **Campaña detective separada** en `LevelDatabase`, sin mezclar con los 5 niveles débutant.
-- `LEVEL_OBJECTIVES` en `server.js`: un bloque por NPC con su expediente (§6), sus frases literales (§7) y las reglas comunes (§8).
+**Cambios de sistema — estado real tras programarlo (14/08/2026):**
+- `LEVEL_OBJECTIVES` en `server.js`: un bloque por NPC con su expediente (§6), sus frases literales (§7) y las reglas comunes (§8). **Hecho y probado contra Gemini.**
+- Zona de **hallazgos en verde** en `LevelHUD` (§3). **Hecha.**
+- **Cronómetro ascendente** sin límite: en modo detective `LevelManager` cuenta con `TimeElapsed` y no falla nunca por tiempo; `starTimeSeconds` = 24 min. **Hecho.**
+- **El caso es el nivel 6, no una lista aparte.** `LevelSelectUI` ya reservaba los ids 6-10 para el tramo avancé y los pintaba bloqueados por no existir. Los cinco casos ocupan ese hueco, con `displayNumber` para que el jugador los vea como "Caso 1..5". Así no hay que tocar `LevelDatabase.Get()`, ni el guardado (que ya separa por `id:dificultad`), ni la pantalla de resultado.
+- **Distinción nueva, y la más importante del diseño de datos:** `checkpoints` es lo que **completa** el nivel (solo las tres validaciones de Fabre) y `objectives` es el **checklist guía** de §7. No son lo mismo: ni hablar con todos ni romper a Marcel son obligatorios. Además un objetivo puede necesitar varios ids a la vez ("pillar a Marcel en dos mentiras"), cosa que el sistema de checkpoints del modo débutant no sabía expresar.
+- **La segunda estrella cambia de significado:** en modo detective no es capturar todas las palabras sino `m_broken` (`secondStarCheckpoint`).
+- **El botón de pista no existía.** `hintAvailable` llevaba meses declarado y `UseHint()` no lo llamaba nadie: no había botón, ni texto, ni pistas. Ahora está construido, con las 12 pistas del caso en `LevelDatabase`, en orden de investigación. Muestra la primera cuyo hallazgo aún falte. Pulsarlo cuando ya no queda nada que pistar **no** cuesta estrella: sería cobrarle al jugador por comprobar que va bien.
 
-**Voces TTS:** las cuatro nuevas y distintas entre sí y de las ya usadas. Odette joven y cálida; Corentin grave y lento; Denis medio, cordial, sin gravedad amenazante (no debe *sonar* culpable); Fabre cansado y neutro — **es el que más importa, reaparece en los cinco casos**.
+**Pendiente de ajustar a ojo:** la maquetación del HUD detective está escrita sin poder verla — panel de arriba de 150 a 430 px, reloj a −470, panel de palabras a −550, sobre la resolución de referencia 1080×1920. Cuenta con retocar esos números en cuanto se vea en pantalla.
+
+**Voces TTS:** las cuatro nuevas y distintas entre sí y de las ya usadas. Odette joven y cálida; Corentin grave y lento; Marcel medio, cordial, sin gravedad amenazante (no debe *sonar* culpable); Fabre cansado y neutro — **es el que más importa, reaparece en los cinco casos**.
 
 ---
 
@@ -349,8 +354,8 @@ Patrón de referencia: `JacquesChatClient.cs` (híbrido guionizado + IA).
 
 | Riesgo | Corte |
 |---|---|
-| Denis confiesa demasiado pronto | Regla dura en su prompt: sin las dos contradicciones enunciadas por el jugador, **no confiesa jamás** |
-| Corentin suelta el nombre de Denis | Su expediente no contiene ese nombre. **No puede decir lo que no sabe** |
+| Marcel confiesa demasiado pronto | Regla dura en su prompt: sin las dos contradicciones enunciadas por el jugador, **no confiesa jamás** |
+| Corentin suelta el nombre de Marcel | Su expediente no contiene ese nombre. **No puede decir lo que no sabe** |
 | Odette suena a detective | Prohibido *sospechoso/raro/mentira*. Registro de camarera que aprecia a sus clientes |
 | El NPC exige buen francés para dar por buena la contradicción | Regla 6 de §8. Se valida por contenido |
 | El jugador se atasca sin saber a quién preguntar | Botón de pista (−1 estrella): da la siguiente pregunta útil, nunca la solución |

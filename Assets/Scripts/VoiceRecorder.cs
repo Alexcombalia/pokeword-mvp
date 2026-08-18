@@ -7,7 +7,17 @@ public class VoiceRecorder : MonoBehaviour
 {
     private const string TranscribeUrl = "https://pokeword-npc-server-kvml-production.up.railway.app/voice/transcribe";
     private const int SampleRate  = 16000;
-    private const int MaxSeconds  = 10;
+
+    // 45s (antes 10). Lo pide la escena final del modo detective: el jugador
+    // le explica el caso al comisario de corrido, como el detective de una
+    // novela, y en 10 segundos no cabe más que una frase suelta.
+    //
+    // Dos techos que NO se pueden cruzar y por los que 45 es el máximo seguro:
+    // Google speech:recognize es la variante SÍNCRONA y solo admite audio de
+    // hasta 60 segundos; y el cuerpo JSON del servidor está limitado a 10 MB
+    // (express.json en server.js). A 48 kHz y 16 bits, 45s son ~4,3 MB de
+    // audio que en base64 pasan a ~5,8 MB — entra, pero sin mucho margen.
+    private const int MaxSeconds  = 45;
 
     private AudioClip clip;
     private bool isRecording;
@@ -82,7 +92,7 @@ public class VoiceRecorder : MonoBehaviour
     // jugador cierra la conversación (p.ej. Escape) a media grabación, en
     // vez de tocar el botón de micro para pararla normalmente. Sin esto, la
     // música se quedaba bajada (ver MusicManager.SetDucked) hasta que la
-    // grabación expirase sola a los 10s (MaxSeconds).
+    // grabación expirase sola al llegar a MaxSeconds.
     public void CancelRecording()
     {
         if (!isRecording) return;
@@ -154,7 +164,13 @@ public class VoiceRecorder : MonoBehaviour
         // onError — el intento se queda "procesando" para siempre y ni
         // siquiera cuenta como fallo (ver BeginnerTurnController), dejando
         // al jugador sin ninguna salida posible.
-        req.timeout = 15;
+        //
+        // 120s (antes 15). Con MaxSeconds a 45 una grabación larga son ~5,8 MB
+        // en base64: por una conexión móvil normal la subida sola ya se come
+        // los 15 segundos viejos, y encima falla DESPUÉS de que el jugador
+        // haya hablado 45 — el peor momento posible para perder el turno.
+        // Sigue habiendo tope, que es lo que evita el cuelgue infinito.
+        req.timeout = 120;
 
         yield return req.SendWebRequest();
 

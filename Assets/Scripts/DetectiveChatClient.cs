@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 // Base de los clientes de chat del MODO DETECTIVE.
 //
 // Cada personaje de un caso tiene su propio endpoint dedicado en el servidor
-// (/npc/odette, /npc/corentin, /npc/denis, /npc/fabre) y su propio script con
+// (/npc/odette, /npc/corentin, /npc/marcel, /npc/fabre) y su propio script con
 // su nombre — así, cuando un NPC se comporta mal en una partida de prueba, se
 // sabe exactamente qué archivo y qué prompt tocar. Lo único que vive aquí es
 // el fontanero HTTP, idéntico para todos: si estuviera copiado en cada
@@ -19,7 +19,7 @@ public abstract class DetectiveChatClient : MonoBehaviour
 {
     private const string serverBase = "https://pokeword-npc-server-kvml-production.up.railway.app";
 
-    // "odette", "corentin", "denis", "fabre". Da a la vez la ruta del endpoint
+    // "odette", "corentin", "marcel", "fabre". Da a la vez la ruta del endpoint
     // y la clave con la que el nivel busca el expediente que toca (Fabre sale
     // en los cinco casos con checkpoints distintos, ver npcObjectiveKeys).
     public abstract string NpcId { get; }
@@ -81,7 +81,7 @@ public abstract class DetectiveChatClient : MonoBehaviour
 
         // Lo que el jugador YA lleva descubierto en el caso. Va en cada
         // petición porque la conversación se reinicia cada vez que se abre el
-        // diálogo: sin esto, un jugador que le pone a Denis la primera
+        // diálogo: sin esto, un jugador que le pone a Marcel la primera
         // contradicción, se va a repreguntar a Odette y vuelve con la segunda
         // se encontraría con que la primera ya no cuenta, y la confesión sería
         // inalcanzable salvo hablando con él de una sentada. El servidor solo

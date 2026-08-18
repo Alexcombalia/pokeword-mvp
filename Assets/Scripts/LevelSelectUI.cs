@@ -161,7 +161,10 @@ public class LevelSelectUI : MonoBehaviour
         nRT.anchorMin = new Vector2(0, 0.4f); nRT.anchorMax = new Vector2(1, 1f);
         nRT.offsetMin = Vector2.zero; nRT.offsetMax = Vector2.zero;
         var numTxt = numGO.AddComponent<TextMeshProUGUI>();
-        numTxt.text      = id.ToString();
+        // Los casos del modo detective son los niveles 6-10 por dentro, pero
+        // el jugador los ve como "Caso 1..5": para él son los casos, no la
+        // segunda mitad de una campaña de diez.
+        numTxt.text      = (def != null ? def.TileNumber : id).ToString();
         numTxt.fontSize  = 56;
         numTxt.color     = built ? Gold : CreamDim;
         numTxt.fontStyle = FontStyles.Bold;

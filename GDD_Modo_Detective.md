@@ -41,7 +41,13 @@ Todo el diseño se somete a esto. Consecuencias directas:
 | ★ **Le menteur** | Haber pillado la mentira: confrontar al mentiroso con la contradicción **dentro de la investigación**, antes de ir al comisario. Se puede resolver un caso sin hacerlo (deduciendo), pero esta estrella exige el careo. |
 | ★ **Chronomètre** | Terminar por debajo del umbral holgado del caso. |
 
-**Botón de pista:** disponible en los 5 casos, cuesta **1 estrella** de la partida actual. Da la siguiente pregunta útil ("alguien en la playa vio volver una barca esa noche"), nunca la solución.
+**Botón de pista:** disponible en los 5 casos, cuesta **1 estrella** de la partida actual — una sola vez, por muchas pistas que se pidan. Da la siguiente pregunta útil, nunca la solución. Cada caso define su lista de pistas en orden de investigación y se muestra la primera cuyo hallazgo aún falte, así siempre habla de lo siguiente que toca.
+
+Dos reglas que salieron al construirlo (14/08/2026):
+- **Si la pista resuelve el caso, deja de ser una válvula de escape y pasa a ser el camino corto.** *"A Odette se le escapan cosas de los clientes, pregúntale qué llevaban encima"* sí; *"fue Marcel"* no.
+- **Pulsarlo cuando ya no queda nada que pistar no cuesta estrella.** Sería cobrarle al jugador por comprobar que va bien.
+
+> ⚠️ Este botón **no existía** hasta el 14/08/2026: `hintAvailable` llevaba meses en `LevelDefinition` y `LevelManager.UseHint()` no lo llamaba nadie.
 
 ### 2.3 El expediente del caso — la regla técnica más importante
 Cada caso define **por escrito, aquí**, para cada NPC implicado:
@@ -65,7 +71,7 @@ No hay pantalla de acusación. Al final de cada caso el jugador va a ver al **co
 3. **La prueba o el detalle que lo sostiene** (`proof_named`)
 
 Comportamiento del comisario:
-- **No acepta un nombre suelto.** Si el jugador solo dice "C'est Denis", pide que se explique: *"Et pourquoi lui ? Qu'est-ce qui vous fait dire ça ?"*
+- **No acepta un nombre suelto.** Si el jugador solo dice "C'est Marcel", pide que se explique: *"Et pourquoi lui ? Qu'est-ce qui vous fait dire ça ?"*
 - **Si la acusación es falsa, no se pierde el caso**: el comisario dice que no le cuadra y **por qué** no le cuadra, y el jugador vuelve a investigar. Equivocarse cuesta tiempo, nada más. Es deliberado: castigar el error con derrota es exactamente lo que calla a un jugador tímido.
 - **No corrige el francés.** Si entiende, acepta. Un francés torpe pero comprensible vale igual que uno perfecto — esta regla es innegociable para el público objetivo.
 - Es **el mismo personaje en los 5 casos**, así el jugador aprende a hablar con él y el momento final gana peso.
@@ -77,7 +83,7 @@ Se reutiliza el cuaderno de palabras existente (`PokeWorldController`). **Sin cu
 
 En su lugar, el panel de objetivos de arriba (`LevelHUD`) gana una **zona de hallazgos**: cada vez que un NPC suelta un dato clave, se escribe sola una línea nueva **en verde**, con una animación de entrada. El jugador no toma notas; es un registro automático de lo que ya ha oído.
 
-- Las líneas de hallazgo son **hechos literales**, nunca conclusiones: *"Denis llevaba algo metálico bajo el abrigo"*, no *"Denis podría ser el asesino"*.
+- Las líneas de hallazgo son **hechos literales**, nunca conclusiones: *"Marcel llevaba algo metálico bajo el abrigo"*, no *"Marcel podría ser el asesino"*.
 - El panel **nunca** marca una mentira, ni señala sospechosos, ni sugiere el siguiente paso (eso es el botón de pista).
 - **Por qué:** en un juego de idiomas el esfuerzo de comprensión se come el de deducción. Un jugador peleando por entender lo que oye no tiene atención libre para notar que dos frases encajan. El panel verde le confirma que ha entendido bien y deja el trabajo mental donde debe estar: en relacionar. Poner dos hechos contradictorios uno debajo del otro hace visible la contradicción sin nombrarla.
 
@@ -109,7 +115,7 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 | **Playa** | Rémy (pescador), Sandra (vieja), Francis (cliente bar) | Caso 5 |
 | **Plaza** | Andre (niño), Paul (viejo), Adrien (vendedor) | Casos 2, 5 |
 | **Auberge** | Baptiste (posadero) | Caso 2 |
-| **Bar Dragon Verde** | ~~Armel (barman), Patrick (cliente)~~ → **vaciada**: Odette, Corentin, Denis y Fabre (4 NPCs nuevos) | **Caso 1** (escena única), 3, 5 |
+| **Bar Dragon Verde** | ~~Armel (barman), Patrick (cliente)~~ → **vaciada**: Odette, Corentin, Marcel y Fabre (4 NPCs nuevos) | **Caso 1** (escena única), 3, 5 |
 | **La Canebière** | Camille (mujer elegante), Pierre (policía) | Caso 3 |
 | **Calle St Jean** | Ivan (policía), Andre (joven) | Caso 3 |
 | **Le Parier** | Louise, Marie (vecinas) | Caso 5 |
@@ -117,7 +123,7 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 | **Villa François** | *vacía* → **M. François** (NPC nuevo) | Caso 5 |
 | Mercado, Pescadería, Épicerie | vacías | Sin uso por ahora |
 
-**NPCs nuevos a crear: 6** — Odette, Corentin, Denis y Fabre (caso 1, en el Bar Dragon Verde) y M. François (caso 5). Fabre se reutiliza en los cinco casos; a partir del caso 2 aparece en la Oficina Portuaria.
+**NPCs nuevos a crear: 6** — Odette, Corentin, Marcel y Fabre (caso 1, en el Bar Dragon Verde) y M. François (caso 5). Fabre se reutiliza en los cinco casos; a partir del caso 2 aparece en la Oficina Portuaria.
 
 **Decisión del 14/08/2026 sobre el Bar Dragon Verde:** se vacía por completo. Armel y Patrick se borran de la escena — el caso 1 empieza de cero ahí para no arrastrar NPCs del modo débutant. Cada personaje del caso 1 lleva **su propio script dedicado**, nada de NPC genérico parametrizado: es más código repetido, pero elimina las confusiones al depurar prompts.
 
@@ -140,7 +146,7 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 - **Brief:** Marius Toussaint, violinista del local, apareció muerto de un disparo en el callejón. Dos cosas no cuadran: tocó una pieza que no era la suya y cortó el turno diez minutos antes.
 - **Duración:** ~30 turnos ≈ 13-15 min · **★ Chronomètre:** 24 min
 
-**La verdad:** fue **Denis Charrier**, ex gendarme, que vendía nombres a cambio de un visado para su mujer y sus hijos. Marius lo descubrió y le dio un plazo. La pieza cambiada era una señal de aviso de Corentin — y es lo que sacó a Marius al callejón antes de tiempo.
+**La verdad:** fue **Marcel Charrier**, ex gendarme, que vendía nombres a cambio de un visado para su mujer y sus hijos. Marius lo descubrió y le dio un plazo. La pieza cambiada era una señal de aviso de Corentin — y es lo que sacó a Marius al callejón antes de tiempo.
 
 **Los cuatro NPCs** (todos nuevos, ver expedientes completos en el documento del caso):
 
@@ -148,12 +154,12 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 |---|---|---|
 | **Odette Lacroix**, 27, camarera | Lo vio todo y no entendió nada. Da los cuatro hechos en bruto | No |
 | **Corentin Vidal**, 50, dueño | Sabe que la pieza era una señal y que alguien preguntaba por Marius. **No sabe quién** | No — calla, no miente |
-| **Denis Charrier**, 44, ex gendarme | **El culpable.** Cordial y colaborador | **Dos mentiras**: el arma y la hora |
+| **Marcel Charrier**, 44, ex gendarme | **El culpable.** Cordial y colaborador | **Dos mentiras**: el arma y la hora |
 | **Comisario Fabre** | Cierra el caso. **En este caso está dentro del bar**, no en su despacho | No |
 
 **La deducción:** Corentin tiene la *importancia* del dato (alguien preguntó por la salida de Marius); Odette tiene el *nombre* y cree que no significa nada. El jugador es el único que tiene las dos mitades. Ningún NPC nombra a un sospechoso.
 
-**★ Le menteur:** romper a Denis con **las dos** contradicciones. Con una sola, sostiene.
+**★ Le menteur:** romper a Marcel con **las dos** contradicciones. Con una sola, sostiene.
 
 **Vocabulario objetivo:** `violon`, `ruelle`, `coup de feu`, `arme`, `mentir`, `horaire`, `sortir`, `témoin`, `prévenir`, `papiers`.
 
@@ -279,10 +285,14 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 
 **Cambios necesarios:**
 1. **Cronómetro ascendente sin límite** en modo detective (`timeLimitSeconds` ignorado; `starTimeSeconds` = umbral holgado). Toca `LevelManager` y `LevelHUD`.
-2. **Campaña separada:** `LevelDatabase` pasa a tener dos listas (débutant 1-5 ya existentes, detective 1-5 nuevos), sin mezclar progreso ni numeración.
+2. ~~**Campaña separada:** dos listas en `LevelDatabase`.~~ → **Resuelto de otra forma el 14/08/2026, y sale más barato:** los casos son los **niveles 6-10**, el tramo avancé que `LevelSelectUI` ya reservaba y pintaba bloqueado por no existir. El progreso ya estaba separado (los resultados se guardan por `id:dificultad`), así que no hace falta una segunda lista ni tocar `Get()`. El jugador los ve numerados 1-5 gracias a `displayNumber`.
 3. **`LEVEL_OBJECTIVES` en `server.js`:** un bloque por NPC y caso, transcribiendo los expedientes de §5 — frase guionizada literal + prohibición de inventar hechos + checkpoints.
-4. **Checkpoints condicionales:** algunos solo se desbloquean si el jugador aporta información de otro NPC (`d_broken`, `c_signal`, `adrien_cracks`, `husband_revealed`, `alibi_*`, `francois_cornered`). Es una condición nueva en el prompt, **no arquitectura nueva**: el criterio del checkpoint pasa a ser "el jugador me ha dicho X".
-5. **6 NPCs nuevos, con script dedicado cada uno**: Odette, Corentin, Denis y Fabre (caso 1, Bar Dragon Verde) y M. François (caso 5). Patrón de referencia: `JacquesChatClient.cs` (híbrido guionizado + IA). Endpoints `/npc/odette`, `/npc/corentin`, `/npc/denis`, `/npc/fabre`.
+4. **Checkpoints condicionales:** algunos solo se desbloquean si el jugador aporta información de otro NPC (`m_broken`, `c_signal`, `adrien_cracks`, `husband_revealed`, `alibi_*`, `francois_cornered`). Es una condición nueva en el prompt, **no arquitectura nueva**: el criterio del checkpoint pasa a ser "el jugador me ha dicho X".
+   **Lección del caso 1:** no basta con describirlo en prosa. Un checkpoint que depende de que el modelo recuerde *"¿me han dicho ya las dos cosas?"* no aguanta. Hay que convertir cada condición en **su propio checkpoint** (`m_confront_gun`, `m_confront_time`) para que la puerta sea una comprobación mecánica sobre una lista que el modelo ya mantiene.
+   **Y ojo con el reseteo:** el cliente borra la conversación de un NPC cada vez que se abre el diálogo, así que ese estado no puede vivir solo en el servidor. Cada petición lleva `knownCheckpoints` desde `LevelManager` y el servidor siembra lo que le corresponde a ese personaje. Sin esto, un jugador que sale a repreguntar a otro testigo y vuelve pierde lo que ya había conseguido.
+
+4b. **Dos listas distintas por nivel, no una:** `checkpoints` es lo que **completa** el caso (las validaciones del comisario) y `objectives` es el **checklist guía** del HUD. Confundirlas obligaría a hablar con todos los testigos para poder cerrar, y el diseño dice justo lo contrario. Un objetivo puede además exigir varios ids a la vez.
+5. **6 NPCs nuevos, con script dedicado cada uno**: Odette, Corentin, Marcel y Fabre (caso 1, Bar Dragon Verde) y M. François (caso 5). Patrón de referencia: `JacquesChatClient.cs` (híbrido guionizado + IA). Endpoints `/npc/odette`, `/npc/corentin`, `/npc/marcel`, `/npc/fabre`.
 6. **Vaciar `BarDragonVerde.unity`**: borrar `NPC_Henry`, `NPC_clientebar` y sus colliders; borrar o desactivar `SceneExitMercado` + `ExitHintMercado` (el caso 1 es de escena única).
 7. **Zona de hallazgos en verde** en `LevelHUD` (§2.5), con animación de entrada, alimentada por las banderas de checkpoint.
 8. **Renombrar** el Andre de Calle St Jean → Émile.
@@ -291,7 +301,7 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 
 **Orden de trabajo acordado:** cerrar este GDD → **programar el caso 1 entero y bien acabado** → probarlo → solo entonces producir los casos 2-5.
 
-**Riesgo principal a vigilar en el caso 1:** que Gemini sostenga las dos mentiras de Denis sin confesar antes de tiempo (basta una contradicción y se rompe = caso roto) y sin volverse un muro imposible (no acepta la contradicción aunque se la digan = caso atascado). Si eso funciona, los otros cuatro casos son producción; si no, se descubre con un caso hecho y no con cinco.
+**Riesgo principal a vigilar en el caso 1:** que Gemini sostenga las dos mentiras de Marcel sin confesar antes de tiempo (basta una contradicción y se rompe = caso roto) y sin volverse un muro imposible (no acepta la contradicción aunque se la digan = caso atascado). Si eso funciona, los otros cuatro casos son producción; si no, se descubre con un caso hecho y no con cinco.
 
 ---
 
@@ -299,5 +309,5 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 
 1. **¿Se mantiene el modo débutant (los 5 niveles actuales) publicado junto al detective, o el juego que sube a la App Store es solo el modo detective?** El débutant está hecho y funciona, pero apunta a otro público (quien no habla francés).
 2. **Coste de API en producción:** publicar en la App Store implica pagar Gemini + TTS + STT de cada jugador. Con 5-15 min de conversación por caso, conviene decidir antes de publicar: límite de partidas gratis, clave propia del usuario, o asumir el coste.
-3. ~~**Voz de Fabre y François**~~ → **decidido el 14/08/2026: se actualizan las voces.** Cada NPC nuevo lleva voz TTS propia, distinta entre sí y de las ya usadas, por realismo. Perfiles del caso 1: Odette joven y cálida; Corentin grave y lento; Denis medio y cordial, **sin gravedad amenazante** (no debe *sonar* culpable); Fabre cansado y neutro. Queda por elegir las voces concretas de Google TTS.
+3. ~~**Voz de Fabre y François**~~ → **decidido el 14/08/2026: se actualizan las voces.** Cada NPC nuevo lleva voz TTS propia, distinta entre sí y de las ya usadas, por realismo. Perfiles del caso 1: Odette joven y cálida; Corentin grave y lento; Marcel medio y cordial, **sin gravedad amenazante** (no debe *sonar* culpable); Fabre cansado y neutro. Queda por elegir las voces concretas de Google TTS.
 4. **La pieza musical** que toca Marius en el caso 1 como señal. No bloquea la programación.

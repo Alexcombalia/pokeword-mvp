@@ -594,11 +594,17 @@ public class DialogueSystem : MonoBehaviour
         // -------------------------
         // NPC DE CASO (modo detective)
         // -------------------------
-        // Mismo flujo que el NPC genérico salvo en una cosa: aquí NO se pasa
-        // por BeginnerTurnController. El modo detective es avanzado por
-        // definición (público que ya habla francés), y el turno de 3 pasos del
-        // modo débutant partiría en dos cada réplica justo cuando el jugador
-        // está intentando encajar dos frases de dos testigos distintos.
+        // Mismo flujo que el NPC genérico, andamiaje de débutant incluido.
+        //
+        // Antes esta rama se saltaba BeginnerTurnController dando por hecho
+        // que un caso era siempre avanzado. Dejó de ser cierto el 18/08/2026,
+        // cuando los casos pasaron a ser TODO el juego y la campaña débutant
+        // (Jacques, el puerto, Godofredo) se retiró: ahora hay casos para
+        // principiantes, y un principiante necesita el turno de 3 pasos tanto
+        // o más en un misterio que en una charla.
+        //
+        // Regla: el andamiaje lo decide la DIFICULTAD, el misterio lo decide el
+        // MODO. Son cosas distintas y no deben volver a mezclarse.
         if (detectiveMode)
         {
             SpeechCaptionUI.Instance?.ShowPlayerLine(msg, GameSettings.IsBasic);
@@ -617,16 +623,35 @@ public class DialogueSystem : MonoBehaviour
                     currentCapturable.Clear();
                     foreach (var kvp in capturable) currentCapturable[kvp.Key] = kvp.Value;
 
-                    SpeechCaptionUI.Instance?.ShowNpcLine(detectiveDisplayName, processed, HandleLinkClicked);
-                    SpeechCaptionUI.Instance?.ShowTranslation(GameSettings.IsBasic ? replyTranslation : null);
-                    SpeechCaptionUI.Instance?.SetPlayerTranslation(GameSettings.IsBasic ? playerMessageTranslation : null, HandleLinkClicked);
-                    NPCVoicePlayer.Instance?.PlayVoice(audioBase64);
+                    void Reveal()
+                    {
+                        SpeechCaptionUI.Instance?.ShowNpcLine(detectiveDisplayName, processed, HandleLinkClicked);
+                        SpeechCaptionUI.Instance?.ShowTranslation(GameSettings.IsBasic ? replyTranslation : null);
+                        SpeechCaptionUI.Instance?.SetPlayerTranslation(GameSettings.IsBasic ? playerMessageTranslation : null, HandleLinkClicked);
+                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64);
 
-                    // Los hallazgos del caso. LevelManager une lo que reportan
-                    // los cuatro NPCs; el panel verde del HUD se pinta desde
-                    // ahí, no desde aquí.
-                    if (checkpointsReached != null && checkpointsReached.Length > 0)
-                        LevelManager.Instance?.ReportCheckpoints(checkpointsReached);
+                        // Los hallazgos del caso. LevelManager une lo que
+                        // reportan todos los NPCs; el panel verde del HUD se
+                        // pinta desde ahí, no desde aquí.
+                        if (checkpointsReached != null && checkpointsReached.Length > 0)
+                            LevelManager.Instance?.ReportCheckpoints(checkpointsReached);
+                    }
+
+                    // Débutant: retiene la respuesta hasta que el jugador la
+                    // "gana" leyéndola en francés. Avancé la revela directa.
+                    if (GameSettings.IsBasic && LevelManager.Instance != null && LevelManager.Instance.IsActive
+                        && !string.IsNullOrEmpty(playerMessageTranslation))
+                    {
+                        BeginnerTurnController.Instance?.RunTurn(playerMessageTranslation, playerMessagePhonetic, capturableFromPhrase =>
+                        {
+                            foreach (var kvp in capturableFromPhrase) currentCapturable[kvp.Key] = kvp.Value;
+                            Reveal();
+                        });
+                    }
+                    else
+                    {
+                        Reveal();
+                    }
                 },
                 (error) =>
                 {
@@ -1186,7 +1211,7 @@ public class DialogueSystem : MonoBehaviour
 
     // Abre la conversación con un NPC de caso (modo detective). La frase de
     // entrada se muestra en el acto, sin llamar al servidor: en un caso de
-    // misterio dos de ellas son piezas del caso (Denis presentándose, Fabre
+    // misterio dos de ellas son piezas del caso (Marcel presentándose, Fabre
     // dando por hecho que fue un robo) y no pueden depender de que el modelo
     // se acuerde de decirlas en su primera respuesta.
     public void OpenDetectiveChat(DetectiveChatClient client, string displayName, string greeting, string greetingTranslation, Transform npcAnchor)

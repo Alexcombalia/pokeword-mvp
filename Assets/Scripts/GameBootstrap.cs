@@ -17,10 +17,23 @@ public class GameBootstrap : MonoBehaviour
     private static readonly string[] interiorScenes =
     {
         "Auberge", "BarDragonVerde", "Epicerie",
-        "Pescaderia", "OficinaPortuaria", "VillaFrancois"
+        "Pescaderia", "OficinaPortuaria", "VillaFrancois",
+        "SalonCondesa"
     };
 
-    private static readonly Vector3 interiorScale = new Vector3(0.8f,  0.8f,  1f);
+    // Escala base del player por tipo de escena.
+    //
+    // Los interiores estaban en 0.8, valor que nunca se retocó cuando se
+    // ajustaron los exteriores a 0.35 — de ahí que el player saliera más del
+    // doble de grande al entrar en el Bar Dragon Verde.
+    //
+    // 0.35 no es un número al azar: las cámaras de todas las escenas son
+    // ortográficas de tamaño 5 y los fondos son imágenes de 1536x1024 a PPU
+    // 100 puestas a escala ~1, o sea que interiores y exteriores encuadran
+    // prácticamente igual. Con el mismo encuadre, el player tiene que medir
+    // lo mismo. Si al verlo en pantalla se queda corto, el siguiente escalón
+    // razonable es 0.45 (el que usa Muelle).
+    private static readonly Vector3 interiorScale = new Vector3(0.35f, 0.35f, 1f);
     private static readonly Vector3 exteriorScale  = new Vector3(0.35f, 0.35f, 1f);
 
     // Per-scene overrides — takes priority over interior/exterior defaults

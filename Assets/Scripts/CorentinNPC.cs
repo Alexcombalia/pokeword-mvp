@@ -5,7 +5,7 @@
 // candado es de VOLUNTAD, no de memoria — no quiere hablar de la señal, pero
 // no finge haberla olvidado. Se abre a la segunda insistencia.
 //
-// Nunca dice el nombre de Denis: no lo sabe. Sí admite que lo conoce, porque
+// Nunca dice el nombre de Marcel: no lo sabe. Sí admite que lo conoce, porque
 // es cliente suyo desde hace años y negarlo sería mentir, y Corentin no miente.
 [UnityEngine.RequireComponent(typeof(CorentinChatClient))]
 public class CorentinNPC : DetectiveNPC

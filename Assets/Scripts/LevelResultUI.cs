@@ -30,6 +30,8 @@ public class LevelResultUI : MonoBehaviour
     TMP_Text   wordsLineText;
     TMP_Text   speedLineText;
     TMP_Text   hintText;
+    GameObject epiloguePanel;   // carta de cierre del caso, antes de las estrellas
+    TMP_Text   epilogueText;
     GameObject nextBtnGO;
     TMP_Text   nextBtnLabel;
     TMP_Text   retryBtnLabel;
@@ -63,10 +65,38 @@ public class LevelResultUI : MonoBehaviour
             starIcons[i].color = i < result.stars ? Gold : GoldDim;
 
         bool es = GameSettings.IsBasic;
+        bool detectiveWin = level.detectiveMode && success;
+
+        // "Se acabó el tiempo" no vale para un caso: en modo detective el
+        // tiempo no hace perder nunca. Si un caso se pierde es por haber
+        // acusado a quien no era.
+        bool accusedWrong = level.detectiveMode && !success;
+
         statusText.text  = success
-            ? (es ? "¡Objetivo conseguido!" : "Objectif réussi !")
-            : (es ? "Se acabó el tiempo — inténtalo de nuevo." : "Temps écoulé — réessaie.");
+            ? (level.detectiveMode
+                ? (es ? "Caso cerrado" : "Affaire classée")
+                : (es ? "¡Objetivo conseguido!" : "Objectif réussi !"))
+            : accusedWrong
+                ? (es ? "Acusaste a un inocente." : "Vous avez accusé un innocent.")
+                : (es ? "Se acabó el tiempo — inténtalo de nuevo." : "Temps écoulé — réessaie.");
         statusText.color = success ? Gold : Fail;
+
+        // El epílogo cierra la historia en los dos desenlaces: el bueno al
+        // resolverlo, y el amargo al mandar a la cárcel a quien no era. Perder
+        // un caso tiene que contarse, no despacharse con una pantalla de fallo.
+        string epilogue = detectiveWin ? level.DisplayEpilogue
+                        : accusedWrong ? level.DisplayEpilogueFail
+                        : null;
+        if (!string.IsNullOrEmpty(epilogue))
+        {
+            epilogueText.text = epilogue;
+            epiloguePanel.SetActive(true);
+            epiloguePanel.transform.SetAsLastSibling(); // por delante de la tarjeta
+        }
+        else
+        {
+            epiloguePanel.SetActive(false);
+        }
 
         // Por qué se ganó o no cada estrella, en concreto — no solo el
         // icono relleno/vacío, sino la razón (tiempo exacto, palabras que
@@ -77,22 +107,49 @@ public class LevelResultUI : MonoBehaviour
         int captured    = LevelManager.Instance != null ? LevelManager.Instance.CapturedTargetCount() : 0;
         int missing     = Mathf.Max(0, totalWords - captured);
 
+        // En modo detective las tres estrellas significan otra cosa: resolver
+        // el caso, romper al mentiroso y el cronómetro. Y nunca se pierde por
+        // tiempo, así que el texto de "no llegaste a tiempo" no aplica.
+        bool detective = level.detectiveMode;
+
         objectiveLineText.text = starObjective
-            ? (es ? "Objetivo conseguido" : "Objectif atteint")
-            : (es ? "No conseguiste el objetivo a tiempo" : "Objectif non atteint à temps");
+            ? (detective ? (es ? "Caso resuelto" : "Affaire résolue")
+                         : (es ? "Objetivo conseguido" : "Objectif atteint"))
+            : (detective ? (es ? "El comisario no cerró el caso" : "Le commissaire n'a pas classé l'affaire")
+                         : (es ? "No conseguiste el objetivo a tiempo" : "Objectif non atteint à temps"));
         objectiveLineText.color = starObjective ? LineOk : LineFail;
 
-        wordsLineText.text = starWords
-            ? (es ? $"Capturaste las {totalWords} palabras" : $"Tu as capturé les {totalWords} mots")
-            : (es ? $"Te faltaron {missing} palabra(s) ({captured}/{totalWords})"
-                  : $"Il te manque {missing} mot(s) ({captured}/{totalWords})");
+        if (detective)
+        {
+            wordsLineText.text = starWords
+                ? (es ? "Rompiste al mentiroso" : "Tu as fait craquer le menteur")
+                : (es ? "No llegaste a romper al mentiroso" : "Tu n'as pas fait craquer le menteur");
+        }
+        else
+        {
+            wordsLineText.text = starWords
+                ? (es ? $"Capturaste las {totalWords} palabras" : $"Tu as capturé les {totalWords} mots")
+                : (es ? $"Te faltaron {missing} palabra(s) ({captured}/{totalWords})"
+                      : $"Il te manque {missing} mot(s) ({captured}/{totalWords})");
+        }
         wordsLineText.color = starWords ? LineOk : LineFail;
 
-        speedLineText.text = success
-            ? (starSpeed
-                ? (es ? $"Lo hiciste en {elapsedSec}s (menos de {starSec}s)" : $"Fait en {elapsedSec}s (moins de {starSec}s)")
-                : (es ? $"Tardaste {elapsedSec}s (necesitabas menos de {starSec}s)" : $"{elapsedSec}s (il fallait moins de {starSec}s)"))
-            : (es ? "No hubo estrella de velocidad — no llegaste a tiempo" : "Pas d'étoile de vitesse — temps écoulé");
+        if (detective)
+        {
+            int elapsedMin = Mathf.FloorToInt(result.timeSeconds / 60f);
+            int starMin    = Mathf.CeilToInt(level.starTimeSeconds / 60f);
+            speedLineText.text = starSpeed
+                ? (es ? $"Resuelto en {elapsedMin} min (menos de {starMin})" : $"Résolu en {elapsedMin} min (moins de {starMin})")
+                : (es ? $"Tardaste {elapsedMin} min (necesitabas menos de {starMin})" : $"{elapsedMin} min (il fallait moins de {starMin})");
+        }
+        else
+        {
+            speedLineText.text = success
+                ? (starSpeed
+                    ? (es ? $"Lo hiciste en {elapsedSec}s (menos de {starSec}s)" : $"Fait en {elapsedSec}s (moins de {starSec}s)")
+                    : (es ? $"Tardaste {elapsedSec}s (necesitabas menos de {starSec}s)" : $"{elapsedSec}s (il fallait moins de {starSec}s)"))
+                : (es ? "No hubo estrella de velocidad — no llegaste a tiempo" : "Pas d'étoile de vitesse — temps écoulé");
+        }
         speedLineText.color = starSpeed ? LineOk : LineFail;
 
         // Mismo aviso que la pista, una línea por muleta usada — para que
@@ -202,6 +259,27 @@ public class LevelResultUI : MonoBehaviour
 
         hintText   = MakeLabel(card.transform, "Hint", "", new Vector2(0, -6), new Vector2(520, 32),
                                 18, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
+
+        // ── Carta de cierre del caso ──
+        // Va por delante de la tarjeta de resultado, a pantalla completa, en
+        // vez de meterse dentro: la tarjeta ya va justa de sitio, y un caso de
+        // misterio se cierra mejor con una pausa a solas con el texto que con
+        // tres líneas apretadas encima de los botones.
+        epiloguePanel = new GameObject("Epilogue", typeof(RectTransform), typeof(Image));
+        epiloguePanel.transform.SetParent(root.transform, false);
+        var epRT = epiloguePanel.GetComponent<RectTransform>();
+        epRT.anchorMin = Vector2.zero; epRT.anchorMax = Vector2.one;
+        epRT.offsetMin = Vector2.zero; epRT.offsetMax = Vector2.zero;
+        epiloguePanel.GetComponent<Image>().color = new Color(0.04f, 0.06f, 0.10f, 0.97f);
+
+        epilogueText = MakeLabel(epiloguePanel.transform, "EpilogueText", "", new Vector2(0, 90), new Vector2(760, 620),
+                                  27, Cream, TextAlignmentOptions.TopLeft, FontStyles.Normal);
+        epilogueText.enableWordWrapping = true;
+        epilogueText.lineSpacing = 12f;
+
+        MakeBtn(epiloguePanel.transform, "BtnEpilogue", "SUITE", new Vector2(0, -360), new Vector2(360, 68),
+                Gold, TextDark, 25, FontStyles.Bold, () => epiloguePanel.SetActive(false));
+        epiloguePanel.SetActive(false);
 
         nextBtnGO = MakeBtn(card.transform, "BtnNext", "NIVEAU SUIVANT >", new Vector2(0, -90), new Vector2(420, 68),
                 Gold, TextDark, 25, FontStyles.Bold, NextLevel);

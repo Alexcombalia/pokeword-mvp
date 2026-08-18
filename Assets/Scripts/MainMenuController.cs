@@ -119,8 +119,11 @@ public class MainMenuController : MonoBehaviour
             new Vector2(0, titleY), new Vector2(900, 110),
             80f, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
 
-        // Tagline
-        MakeLabel("Tagline", root, "Apprends le français en vivant",
+        // Tagline. Era "en vivant" cuando el juego iba de sobrevivir recién
+        // llegado a Marsella; desde el 18/08/2026 el juego es exclusivamente
+        // de resolver misterios y el jugador es un detective privado, así que
+        // lo que se aprende hablando ya no es vivir, es investigar.
+        MakeLabel("Tagline", root, "Apprends le français en enquêtant",
             new Vector2(0, titleY - 72), new Vector2(700, 36),
             20f, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
 

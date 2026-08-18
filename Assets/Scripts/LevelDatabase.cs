@@ -1,36 +1,123 @@
 using System.Collections.Generic;
 
-// Caja piloto "El Puerto" — campaña débutant de 5 niveles (1-5), construida
-// sobre NPCs y escenas que ya existen en el mundo. Arco narrativo: Jacques
-// (mentor) va soltando a Godofredo en la ciudad — Muelle (trabajo), Playa
-// (amistad/nostalgia), un recado entre ambos (retransmitir información,
-// cruza escenas de verdad), y de vuelta con Jacques como examen final antes
-// de pasar a avancé (nivel 6). Ver memory: project_pokeword_redesign.
+// Campaña del juego: 10 casos de misterio. 1-5 débutant, 6-10 avancé. El
+// jugador es un detective privado en todos.
+//
+// Los niveles 2-5 son todavía la campaña vieja (Jacques, el puerto,
+// Godofredo), que quedó retirada del diseño el 18/08/2026 y se irá
+// sustituyendo caso a caso. Se dejan funcionando mientras tanto para no
+// dejar el juego con un solo nivel jugable.
 public static class LevelDatabase
 {
     public static readonly List<LevelDefinition> All = new List<LevelDefinition>
     {
+        // ─── CASO DÉBUTANT 1 ───────────────────────────────────────────────
+        // Sustituye a «Le bateau de Jacques» (18/08/2026): el juego pasa a ser
+        // exclusivamente de resolver misterios y el jugador es un detective
+        // privado. Ver Pokeword/Caso_D1_La_Comtesse.md.
+        //
+        // Es el PRIMER nivel del juego: enseña a moverse, a hablar, a capturar
+        // palabras y a investigar, a alguien que además no habla francés.
         new LevelDefinition(
             id: 1,
-            title: "Le bateau de Jacques",
-            sceneName: "Puerto",
-            briefTitle: "Niveau 1 — Le bateau de Jacques",
-            briefSummary: "Parle avec Jacques et découvre le nom de son bateau.",
-            briefTitleEs: "Nivel 1 — El barco de Jacques",
-            briefSummaryEs: "Habla con Jacques y descubre el nombre de su barco.",
+            displayNumber: 1,
+            detectiveMode: true,
+            title: "Le collier de la comtesse",
+            sceneName: "SalonCondesa",
+            briefTitle: "Cas 1 — Le collier de la comtesse",
+            briefSummary: "La comtesse Volkova est morte cette nuit. Le docteur dit : le cœur. Sa femme de chambre ne le croit pas — et son collier de diamants a disparu.",
+            briefTitleEs: "Caso 1 — El collar de la condesa",
+            briefSummaryEs: "La condesa Volkova murió anoche. El médico dice que fue el corazón. Su doncella no se lo cree — y su collar de diamantes ha desaparecido.",
             targetWords: new List<TargetWord>
             {
-                new TargetWord("bateau",    "barco"),
-                new TargetWord("capitaine", "capitán"),
-                new TargetWord("mer",       "mar"),
-                new TargetWord("port",      "puerto"),
+                new TargetWord("collier",   "collar"),
+                new TargetWord("bouteille", "botella"),
+                new TargetWord("nuit",      "noche"),
+                new TargetWord("docteur",   "médico"),
+                new TargetWord("vendre",    "vender"),
+                new TargetWord("voir",      "ver"),
             },
-            timeLimitSeconds: 180f, // 3 minutos — 90s se quedaba corto para débutant con la mecánica nueva de lectura
-            starTimeSeconds: 90f, // 1:30 — estrella de velocidad
-            npcObjectiveKey: "level1_boat_name",
-            hintAvailable: false
+            timeLimitSeconds: 0f,   // sin fallo por tiempo, el reloj sube
+            starTimeSeconds: 1200f, // 20 min — holgado: en débutant cada turno pasa por la lectura en voz alta
+            npcObjectiveKey: null,
+            hintAvailable: true,
+            npcObjectiveKeys: new Dictionary<string, string>
+            {
+                { "nadia",   "cased1_nadia" },
+                { "lemaire", "cased1_lemaire" },
+                { "piotr",   "cased1_piotr" },
+                { "police",  "cased1_police" },
+            },
+            // El caso lo cierra el AGENTE, dándole un nombre. Y solo deja
+            // darlo cuando el jugador tiene las dos pruebas (l_piotr y
+            // p_yesterday) — hasta entonces contesta que no hay bastante.
+            // Acertar es `pol_right`; acusar a un inocente es `failCheckpoint`
+            // y pierde el caso en el acto.
+            checkpoints: new List<LevelCheckpoint>
+            {
+                new LevelCheckpoint("pol_right", "Donne le bon nom à l'agent", "Dale el nombre correcto al agente"),
+            },
+            failCheckpoint: "pol_wrong",
+            // null a propósito: en débutant la 2ª estrella es de vocabulario.
+            // Un principiante está aquí para aprender palabras, no para
+            // aguantar un careo en francés.
+            secondStarCheckpoint: null,
+            objectives: new List<LevelObjective>
+            {
+                new LevelObjective("Écoute Nadia : hier soir",              "Escucha a Nadia: qué pasó ayer por la noche", "n_selling"),
+                new LevelObjective("Demande au docteur ce qui a pu la tuer","Pregunta al doctor qué pudo matarla",         "l_drink"),
+                new LevelObjective("Trouve qui vend cette boisson",         "Averigua quién vende esa bebida",            "l_piotr"),
+                new LevelObjective("Casse son alibi : il dit être venu il y a des jours", "Rompe su coartada: dice que vino hace días", "p_yesterday"),
+                new LevelObjective("Donne ton nom à l'agent",               "Dale tu respuesta final al agente",          "pol_right"),
+            },
+            findings: new List<LevelFinding>
+            {
+                new LevelFinding("n_selling",  "Hier soir un homme vendait quelque chose à la comtesse", "Ayer por la noche un hombre le estaba vendiendo algo a la condesa"),
+                new LevelFinding("n_case",     "Nadia n'a pas vu son visage. Il portait une mallette — un marchand de bijoux, croit-elle", "Nadia no le vio la cara. Llevaba un maletín — un comerciante de joyas, cree ella"),
+                new LevelFinding("n_necklace", "Le collier de diamants a disparu",                       "El collar de diamantes ha desaparecido"),
+                new LevelFinding("l_nocrime",  "Rien sur le corps. Aucune blessure",                     "Nada en el cuerpo. Ninguna herida"),
+                new LevelFinding("l_drink",    "Une boisson forte, du cognac, peut tuer un cœur faible",  "Una bebida fuerte, como el coñac, puede matar un corazón débil"),
+                new LevelFinding("l_piotr",    "C'est Piotr qui vend le cognac, illégalement",            "Es Piotr quien vende el coñac, ilegalmente"),
+                new LevelFinding("p_deny",     "Piotr dit qu'il n'était pas là hier",                     "Piotr dice que ayer no estuvo allí"),
+                new LevelFinding("p_sold",     "Piotr admet avoir vendu le cognac à la comtesse — mais il y a des jours", "Piotr admite haberle vendido el coñac a la condesa — pero hace días"),
+                new LevelFinding("p_accuses",  "Piotr accuse Nadia : elle était seule avec elle",         "Piotr acusa a Nadia: estaba sola con ella"),
+            },
+            hints: new List<LevelHint>
+            {
+                new LevelHint("n_selling",  "Nadia était là hier soir. Demande-lui ce qui s'est passé.",
+                                            "Nadia estaba allí ayer por la noche. Pregúntale qué pasó."),
+                new LevelHint("n_case",     "Demande à Nadia comment était l'homme, ce qu'il portait.",
+                                            "Pregúntale a Nadia cómo era el hombre y qué llevaba."),
+                new LevelHint("n_necklace", "Demande à Nadia ce qui manque dans le salon.",
+                                            "Pregúntale a Nadia qué falta en el salón."),
+                new LevelHint("l_drink",    "Demande au docteur ce qui d'autre peut arrêter un cœur.",
+                                            "Pregúntale al doctor qué otra cosa puede parar un corazón."),
+                new LevelHint("l_piotr",    "Demande au docteur qui vend du cognac ici.",
+                                            "Pregúntale al doctor quién vende coñac aquí."),
+                new LevelHint("p_sold",     "Parle du cognac au bijoutier. Vois ce qu'il répond.",
+                                            "Háblale del coñac al joyero. A ver qué contesta."),
+                new LevelHint("p_yesterday","Il dit être venu il y a des jours. Nadia a vu un homme vendre HIER SOIR.",
+                                            "Dice que vino hace días. Nadia vio a un hombre vendiendo AYER POR LA NOCHE."),
+                new LevelHint("pol_right",  "L'agent attend. Va lui donner un nom.",
+                                            "El agente espera. Ve a darle un nombre."),
+            },
+            epilogueFr:
+                "Piotr Sokolov a été emmené le matin même. Le collier était dans son atelier, enveloppé dans un chiffon.\n\n" +
+                "Nadia n'a pas voulu le garder. Elle a dit qu'il était à madame, et que madame n'était plus là.\n\n" +
+                "Le docteur Lemaire a demandé qu'on revoie le certificat. C'est la seule chose qu'il ait demandée de sa vie.",
+            epilogueEs:
+                "Piotr Sokolov fue detenido esa misma mañana. El collar estaba en su taller, envuelto en un trapo.\n\n" +
+                "Nadia no quiso quedárselo. Dijo que era de la señora, y que la señora ya no estaba.\n\n" +
+                "El doctor Lemaire pidió que se revisara el certificado. Fue lo único que pidió en toda su vida.",
+            epilogueFailFr:
+                "L'agent a emmené la personne que vous avez nommée. Personne n'a posé d'autre question.\n\n" +
+                "Piotr Sokolov a fermé boutique une semaine, par prudence. Puis il a rouvert. Le collier n'a jamais été retrouvé.\n\n" +
+                "L'affaire est classée. Elle est fausse, mais elle est classée.",
+            epilogueFailEs:
+                "El agente se llevó a quien usted nombró. Nadie hizo más preguntas.\n\n" +
+                "Piotr Sokolov cerró la tienda una semana, por prudencia. Después volvió a abrir. El collar no apareció nunca.\n\n" +
+                "El caso está cerrado. Está mal, pero está cerrado."
         ),
-
         new LevelDefinition(
             id: 2,
             title: "Un coup de main au quai",
@@ -155,6 +242,132 @@ public static class LevelDatabase
             starTimeSeconds: 135f,
             npcObjectiveKey: "level5_jacques_trust", // Jacques usa su propio endpoint dedicado, no npcObjectiveKeys
             hintAvailable: false
+        ),
+
+        // ─── CAMPAÑA DETECTIVE (avancé) — niveles 6-10 ─────────────────────
+        // Ocupan el tramo 6-10 que LevelSelectUI ya reservaba para avancé y
+        // que hasta ahora salía bloqueado por no existir. El progreso no se
+        // mezcla con débutant: son ids distintos, y además LevelManager guarda
+        // los resultados por "id:dificultad". El jugador los ve numerados
+        // 1-5 (displayNumber), porque para él son "los casos", no "los
+        // niveles 6-10". Ver Pokeword/GDD_Modo_Detective.md.
+        new LevelDefinition(
+            id: 6,
+            displayNumber: 1,
+            detectiveMode: true,
+            title: "Le violoniste du Dragon Vert",
+            sceneName: "BarDragonVerde",
+            briefTitle: "Cas 1 — Le violoniste du Dragon Vert",
+            briefSummary: "Marius Toussaint, le violoniste, a été tué hier soir dans la ruelle. Deux choses ne collent pas : il a joué un autre morceau, et il a arrêté dix minutes plus tôt.",
+            briefTitleEs: "Caso 1 — El violinista del Dragón Verde",
+            briefSummaryEs: "Mataron de un disparo a Marius Toussaint, el violinista, anoche en el callejón. Dos cosas no cuadran: tocó una pieza que no era la suya y cortó el turno diez minutos antes.",
+            targetWords: new List<TargetWord>
+            {
+                new TargetWord("violon",     "violín"),
+                new TargetWord("ruelle",     "callejón"),
+                new TargetWord("coup de feu", "disparo"),
+                new TargetWord("arme",       "arma"),
+                new TargetWord("horaires",   "horarios"),
+                new TargetWord("papiers",    "papeles"),
+            },
+            // En modo detective timeLimitSeconds NO se usa como fallo — el
+            // reloj sube y el caso no se pierde nunca por tiempo. Se deja un
+            // valor por compatibilidad con el resto del sistema.
+            timeLimitSeconds: 0f,
+            starTimeSeconds: 1440f, // 24 min — ★ Chronomètre, holgado sobre los 13-15 previstos
+            npcObjectiveKey: null,
+            hintAvailable: true,
+            npcObjectiveKeys: new Dictionary<string, string>
+            {
+                { "odette",   "case1_odette" },
+                { "corentin", "case1_corentin" },
+                { "marcel",    "case1_marcel" },
+                { "fabre",    "case1_fabre" },
+            },
+            // Lo que CIERRA el caso: convencer al comisario. Ni hablar con
+            // todos ni romper a Marcel son obligatorios — con las dos mentiras
+            // confirmadas por Odette, Fabre da la orden igual.
+            checkpoints: new List<LevelCheckpoint>
+            {
+                new LevelCheckpoint("f_name",   "Donne un nom au commissaire",        "Dale un nombre al comisario"),
+                new LevelCheckpoint("f_lies",   "Expose les deux mensonges",          "Expón las dos mentiras"),
+                new LevelCheckpoint("f_motive", "Explique qu'il l'attendait",         "Explica que lo estaba esperando"),
+            },
+            // ★ Le menteur: romper a Marcel con las DOS contradicciones.
+            secondStarCheckpoint: "m_broken",
+            objectives: new List<LevelObjective>
+            {
+                new LevelObjective("Écoute Odette : ce qu'elle a vu",        "Escucha a Odette: qué vio anoche",             "o_signal"),
+                new LevelObjective("Fais parler Corentin du morceau",        "Haz hablar a Corentin de la pieza musical",    "c_signal"),
+                // NUNCA nombrar al culpable aquí. El checklist se ve desde el
+                // primer segundo, antes de hablar con nadie: decir "pilla a
+                // Marcel en dos mentiras" resuelve el caso en la pantalla de
+                // carga. El objetivo plantea el reto; el nombre lo pone el
+                // jugador. Misma regla que para los NPCs — solo el jugador
+                // saca conclusiones.
+                new LevelObjective("Ici quelqu'un ment. Prends-le en deux mensonges", "Aquí alguien miente. Píllalo en dos mentiras", "m_lie_gun", "m_lie_time"),
+                new LevelObjective("Raconte au commissaire ce qui s'est passé", "Cuéntale al comisario lo que pasó",         "f_name", "f_lies", "f_motive"),
+            },
+            // Hechos, nunca conclusiones. El panel no dice quién miente: pone
+            // los datos uno debajo de otro y deja que el jugador los cruce.
+            findings: new List<LevelFinding>
+            {
+                new LevelFinding("o_signal",        "Marius a changé de morceau et fini 10 min plus tôt", "Marius cambió de pieza y cortó el turno 10 minutos antes"),
+                new LevelFinding("o_metal",         "Marcel avait quelque chose de métallique sous son manteau", "Marcel llevaba algo metálico bajo el abrigo"),
+                new LevelFinding("o_exit",          "Marcel est sorti quand la musique s'est arrêtée",     "Marcel salió justo cuando paró la música"),
+                new LevelFinding("o_asked",         "Marcel demandait les horaires et la sortie de Marius", "Marcel preguntó por los horarios y la salida de Marius"),
+                new LevelFinding("c_signal",        "Le morceau était un signal : « pars, on te cherche »", "La pieza era una señal: «vete, alguien te busca»"),
+                new LevelFinding("c_someone_asked", "Quelqu'un a demandé après Marius. Corentin ignore qui", "Alguien preguntó por Marius. Corentin no sabe quién"),
+                new LevelFinding("m_lie_gun",       "Marcel dit ne plus porter d'arme depuis sa retraite",  "Marcel dice que no lleva arma desde que se retiró"),
+                new LevelFinding("m_lie_time",      "Marcel dit être parti bien avant le coup de feu",      "Marcel dice que se fue mucho antes del disparo"),
+            },
+            // Pistas: la siguiente PREGUNTA útil, nunca la solución. En orden
+            // de investigación — se muestra la primera que aún no esté hecha.
+            // La de m_broken va antes que las del comisario a propósito: quien
+            // ya tiene las dos mentiras y pide pista está buscando el careo,
+            // y quien solo quiere cerrar puede ignorarla e ir a ver a Fabre.
+            hints: new List<LevelHint>
+            {
+                new LevelHint("o_signal",  "Odette servait hier soir. Demande-lui ce qui s'est passé.",
+                                           "Odette servía anoche. Pregúntale qué pasó."),
+                new LevelHint("o_exit",    "Demande à Odette qui est sorti du bar, et quand.",
+                                           "Pregúntale a Odette quién salió del bar, y cuándo."),
+                new LevelHint("o_metal",   "Odette parle des habitués sans y penser. Demande-lui ce qu'ils portaient.",
+                                           "A Odette se le escapan cosas de los clientes. Pregúntale qué llevaban encima."),
+                new LevelHint("o_asked",   "Demande à Odette ce qui s'est passé l'après-midi, avant le concert.",
+                                           "Pregúntale a Odette qué pasó esa tarde, antes del concierto."),
+                new LevelHint("c_signal",  "Le patron n'aime pas la question du morceau. Reviens dessus.",
+                                           "Al dueño no le gusta la pregunta de la pieza. Insiste."),
+                new LevelHint("c_someone_asked", "Demande à Corentin pourquoi il a donné ce signal ce soir-là.",
+                                           "Pregúntale a Corentin por qué dio esa señal justo esa noche."),
+                new LevelHint("m_lie_gun", "Demande à Marcel s'il porte encore une arme.",
+                                           "Pregúntale a Marcel si todavía lleva arma."),
+                new LevelHint("m_lie_time","Demande à Marcel à quelle heure il est parti.",
+                                           "Pregúntale a Marcel a qué hora se fue."),
+                new LevelHint("m_broken",  "Marcel a dit deux choses fausses. Mets-lui les deux devant, pas une.",
+                                           "Marcel ha dicho dos cosas falsas. Ponle las dos delante, no una."),
+                new LevelHint("f_name",    "Le commissaire attend à sa table. Va lui dire qui c'était.",
+                                           "El comisario espera en su mesa. Ve a decirle quién fue."),
+                new LevelHint("f_lies",    "Un nom ne suffit pas. Raconte-lui les deux mensonges.",
+                                           "Un nombre no basta. Cuéntale las dos mentiras."),
+                new LevelHint("f_motive",  "Dis-lui aussi que Marcel demandait par quelle porte Marius sortait.",
+                                           "Dile además que Marcel preguntaba por qué puerta salía Marius."),
+            },
+            // Un solo final. Cierra las tres cosas que el caso deja abiertas:
+            // qué pasa con el culpable, qué pasa con Corentin —que es quien
+            // carga con la ironía— y el violín, que es con lo que empezó todo.
+            // No menciona los visados: eso solo se sabe si Marcel lo confiesa,
+            // y quien lo consiguió ya lo ha oído de su boca, que es donde más
+            // duele. El que investiga mejor no se lleva otro final, se lleva
+            // haber estado delante.
+            epilogueFr:
+                "Marcel Charrier a été arrêté le soir même. Il n'a pas résisté.\n\n" +
+                "Corentin a appris que son signal — celui qui devait sauver Marius — est ce qui l'a envoyé dans la ruelle dix minutes trop tôt. Le café est resté fermé trois jours.\n\n" +
+                "Le violon, lui, est toujours sur le comptoir. Personne n'a voulu le déplacer.",
+            epilogueEs:
+                "Marcel Charrier fue detenido esa misma noche. No se resistió.\n\n" +
+                "Corentin supo que su señal —la que debía salvar a Marius— fue lo que lo mandó al callejón diez minutos antes de tiempo. El café estuvo tres días cerrado.\n\n" +
+                "El violín sigue en la barra. Nadie ha querido moverlo."
         ),
     };
 
