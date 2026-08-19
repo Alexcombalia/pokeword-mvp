@@ -37,6 +37,24 @@ public static class LevelDatabase
                 new TargetWord("vendre",    "vender"),
                 new TargetWord("voir",      "ver"),
             },
+            targetWordsEn: new List<TargetWord>
+            {
+                new TargetWord("necklace", "collar"),
+                new TargetWord("bottle",   "botella"),
+                new TargetWord("night",    "noche"),
+                new TargetWord("doctor",   "médico"),
+                new TargetWord("sell",     "vender"),
+                new TargetWord("see",      "ver"),
+            },
+            targetWordsIt: new List<TargetWord>
+            {
+                new TargetWord("collana",  "collar"),
+                new TargetWord("bottiglia","botella"),
+                new TargetWord("notte",    "noche"),
+                new TargetWord("dottore",  "médico"),
+                new TargetWord("vendere",  "vender"),
+                new TargetWord("vedere",   "ver"),
+            },
             timeLimitSeconds: 0f,   // sin fallo por tiempo, el reloj sube
             starTimeSeconds: 1200f, // 20 min — holgado: en débutant cada turno pasa por la lectura en voz alta
             npcObjectiveKey: null,
@@ -48,11 +66,11 @@ public static class LevelDatabase
                 { "piotr",   "cased1_piotr" },
                 { "police",  "cased1_police" },
             },
-            // El caso lo cierra el AGENTE, dándole un nombre. Y solo deja
-            // darlo cuando el jugador tiene las dos pruebas (l_piotr y
-            // p_yesterday) — hasta entonces contesta que no hay bastante.
-            // Acertar es `pol_right`; acusar a un inocente es `failCheckpoint`
-            // y pierde el caso en el acto.
+            // El caso lo cierra el AGENTE, dándole un nombre. Solo deja darlo
+            // con la confesión de Piotr (`p_broken`) o, en su defecto, con las
+            // dos pruebas (`l_piotr` + `p_yesterday`) — hasta entonces contesta
+            // que no hay bastante. Acertar es `pol_right`; acusar a un inocente
+            // es `failCheckpoint` y pierde el caso en el acto.
             checkpoints: new List<LevelCheckpoint>
             {
                 new LevelCheckpoint("pol_right", "Donne le bon nom à l'agent", "Dale el nombre correcto al agente"),
@@ -64,11 +82,21 @@ public static class LevelDatabase
             secondStarCheckpoint: null,
             objectives: new List<LevelObjective>
             {
-                new LevelObjective("Écoute Nadia : hier soir",              "Escucha a Nadia: qué pasó ayer por la noche", "n_selling"),
-                new LevelObjective("Demande au docteur ce qui a pu la tuer","Pregunta al doctor qué pudo matarla",         "l_drink"),
-                new LevelObjective("Trouve qui vend cette boisson",         "Averigua quién vende esa bebida",            "l_piotr"),
-                new LevelObjective("Casse son alibi : il dit être venu il y a des jours", "Rompe su coartada: dice que vino hace días", "p_yesterday"),
-                new LevelObjective("Donne ton nom à l'agent",               "Dale tu respuesta final al agente",          "pol_right"),
+                // El checklist se ve desde el primer segundo, así que no puede
+                // contener nada que el jugador aún no haya averiguado. Dos
+                // objetivos se cayeron por eso tras el primer testeo:
+                //  · "Averigua quién vende esa bebida" hablaba de una bebida
+                //    antes de que nadie hubiera mencionado ninguna. Ahora va
+                //    junto con el anterior, sin nombrarla.
+                //  · "Rompe su coartada: dice que vino hace días" era el
+                //    spoiler entero del caso — la coartada, su contenido y que
+                //    es falsa — servido en la pantalla de carga. Eliminado.
+                //    `p_yesterday` se queda sin línea propia: los objetivos son
+                //    guía, no el índice de todo lo que hay que descubrir.
+                new LevelObjective("Écoute Nadia : hier soir",     "Escucha a Nadia: qué pasó ayer por la noche", "n_selling"),
+                new LevelObjective("Cherche ce qui a pu la tuer",  "Averigua si algo pudo matarla",               "l_drink", "l_piotr"),
+                new LevelObjective("Trouve qui a menti",           "Descubre quién ha mentido",                   "p_deny"),
+                new LevelObjective("Donne ton nom à l'agent",      "Dale tu respuesta final al agente",           "pol_right"),
             },
             findings: new List<LevelFinding>
             {
@@ -273,6 +301,24 @@ public static class LevelDatabase
             // En modo detective timeLimitSeconds NO se usa como fallo — el
             // reloj sube y el caso no se pierde nunca por tiempo. Se deja un
             // valor por compatibilidad con el resto del sistema.
+            targetWordsEn: new List<TargetWord>
+            {
+                new TargetWord("violin",  "violín"),
+                new TargetWord("alley",   "callejón"),
+                new TargetWord("gunshot", "disparo"),
+                new TargetWord("gun",     "arma"),
+                new TargetWord("hours",   "horarios"),
+                new TargetWord("papers",  "papeles"),
+            },
+            targetWordsIt: new List<TargetWord>
+            {
+                new TargetWord("violino", "violín"),
+                new TargetWord("vicolo",  "callejón"),
+                new TargetWord("sparo",   "disparo"),
+                new TargetWord("pistola", "arma"),
+                new TargetWord("orari",   "horarios"),
+                new TargetWord("documenti","papeles"),
+            },
             timeLimitSeconds: 0f,
             starTimeSeconds: 1440f, // 24 min — ★ Chronomètre, holgado sobre los 13-15 previstos
             npcObjectiveKey: null,
@@ -297,29 +343,29 @@ public static class LevelDatabase
             secondStarCheckpoint: "m_broken",
             objectives: new List<LevelObjective>
             {
-                new LevelObjective("Écoute Odette : ce qu'elle a vu",        "Escucha a Odette: qué vio anoche",             "o_signal"),
-                new LevelObjective("Fais parler Corentin du morceau",        "Haz hablar a Corentin de la pieza musical",    "c_signal"),
+                new LevelObjective("Écoute Odette : ce qu'elle a vu", "Escucha a Odette: qué vio anoche", "Listen to Odette: what she saw", new[]{ "o_signal" }, "Ascolta Odette: cosa ha visto"),
+                new LevelObjective("Fais parler Corentin du morceau", "Haz hablar a Corentin de la pieza musical", "Get Corentin to talk about the tune", new[]{ "c_signal" }, "Fai parlare Corentin del pezzo"),
                 // NUNCA nombrar al culpable aquí. El checklist se ve desde el
                 // primer segundo, antes de hablar con nadie: decir "pilla a
                 // Marcel en dos mentiras" resuelve el caso en la pantalla de
                 // carga. El objetivo plantea el reto; el nombre lo pone el
                 // jugador. Misma regla que para los NPCs — solo el jugador
                 // saca conclusiones.
-                new LevelObjective("Ici quelqu'un ment. Prends-le en deux mensonges", "Aquí alguien miente. Píllalo en dos mentiras", "m_lie_gun", "m_lie_time"),
-                new LevelObjective("Raconte au commissaire ce qui s'est passé", "Cuéntale al comisario lo que pasó",         "f_name", "f_lies", "f_motive"),
+                new LevelObjective("Ici quelqu'un ment. Prends-le en deux mensonges", "Aquí alguien miente. Píllalo en dos mentiras", "Someone here is lying. Catch him in two lies", new[]{ "m_lie_gun", "m_lie_time" }, "Qui qualcuno mente. Coglilo in due bugie"),
+                new LevelObjective("Raconte au commissaire ce qui s'est passé", "Cuéntale al comisario lo que pasó", "Tell the inspector what happened", new[]{ "f_name", "f_lies", "f_motive" }, "Racconta al commissario cos'è successo"),
             },
             // Hechos, nunca conclusiones. El panel no dice quién miente: pone
             // los datos uno debajo de otro y deja que el jugador los cruce.
             findings: new List<LevelFinding>
             {
-                new LevelFinding("o_signal",        "Marius a changé de morceau et fini 10 min plus tôt", "Marius cambió de pieza y cortó el turno 10 minutos antes"),
-                new LevelFinding("o_metal",         "Marcel avait quelque chose de métallique sous son manteau", "Marcel llevaba algo metálico bajo el abrigo"),
-                new LevelFinding("o_exit",          "Marcel est sorti quand la musique s'est arrêtée",     "Marcel salió justo cuando paró la música"),
-                new LevelFinding("o_asked",         "Marcel demandait les horaires et la sortie de Marius", "Marcel preguntó por los horarios y la salida de Marius"),
-                new LevelFinding("c_signal",        "Le morceau était un signal : « pars, on te cherche »", "La pieza era una señal: «vete, alguien te busca»"),
-                new LevelFinding("c_someone_asked", "Quelqu'un a demandé après Marius. Corentin ignore qui", "Alguien preguntó por Marius. Corentin no sabe quién"),
-                new LevelFinding("m_lie_gun",       "Marcel dit ne plus porter d'arme depuis sa retraite",  "Marcel dice que no lleva arma desde que se retiró"),
-                new LevelFinding("m_lie_time",      "Marcel dit être parti bien avant le coup de feu",      "Marcel dice que se fue mucho antes del disparo"),
+                new LevelFinding("o_signal",        "Marius a changé de morceau et fini 10 min plus tôt", "Marius cambió de pieza y cortó el turno 10 minutos antes", "Marius changed the tune and finished 10 min early", "Marius ha cambiato pezzo e ha finito 10 min prima"),
+                new LevelFinding("o_metal",         "Marcel avait quelque chose de métallique sous son manteau", "Marcel llevaba algo metálico bajo el abrigo", "Marcel had something metal under his coat", "Marcel aveva qualcosa di metallo sotto il cappotto"),
+                new LevelFinding("o_exit",          "Marcel est sorti quand la musique s'est arrêtée",     "Marcel salió justo cuando paró la música", "Marcel left the moment the music stopped", "Marcel è uscito appena la musica si è fermata"),
+                new LevelFinding("o_asked",         "Marcel demandait les horaires et la sortie de Marius", "Marcel preguntó por los horarios y la salida de Marius", "Marcel had asked about Marius's hours and his exit", "Marcel aveva chiesto degli orari e dell'uscita di Marius"),
+                new LevelFinding("c_signal",        "Le morceau était un signal : « pars, on te cherche »", "La pieza era una señal: «vete, alguien te busca»", "The tune was a signal: \"leave, someone is looking for you\"", "Il pezzo era un segnale: «vattene, qualcuno ti cerca»"),
+                new LevelFinding("c_someone_asked", "Quelqu'un a demandé après Marius. Corentin ignore qui", "Alguien preguntó por Marius. Corentin no sabe quién", "Someone asked after Marius. Corentin doesn't know who", "Qualcuno ha chiesto di Marius. Corentin non sa chi"),
+                new LevelFinding("m_lie_gun",       "Marcel dit ne plus porter d'arme depuis sa retraite",  "Marcel dice que no lleva arma desde que se retiró", "Marcel says he has not carried a gun since he retired", "Marcel dice di non portare la pistola da quando è in pensione"),
+                new LevelFinding("m_lie_time",      "Marcel dit être parti bien avant le coup de feu",      "Marcel dice que se fue mucho antes del disparo", "Marcel says he left well before the gunshot", "Marcel dice di essere andato via molto prima dello sparo"),
             },
             // Pistas: la siguiente PREGUNTA útil, nunca la solución. En orden
             // de investigación — se muestra la primera que aún no esté hecha.
@@ -329,29 +375,53 @@ public static class LevelDatabase
             hints: new List<LevelHint>
             {
                 new LevelHint("o_signal",  "Odette servait hier soir. Demande-lui ce qui s'est passé.",
-                                           "Odette servía anoche. Pregúntale qué pasó."),
+                                           "Odette servía anoche. Pregúntale qué pasó.",
+                                           "Odette was serving last night. Ask her what happened.",
+                                            "Odette serviva ieri sera. Chiedile cos'è successo."),
                 new LevelHint("o_exit",    "Demande à Odette qui est sorti du bar, et quand.",
-                                           "Pregúntale a Odette quién salió del bar, y cuándo."),
+                                           "Pregúntale a Odette quién salió del bar, y cuándo.",
+                                           "Ask Odette who left the bar, and when.",
+                                            "Chiedi a Odette chi è uscito dal bar, e quando."),
                 new LevelHint("o_metal",   "Odette parle des habitués sans y penser. Demande-lui ce qu'ils portaient.",
-                                           "A Odette se le escapan cosas de los clientes. Pregúntale qué llevaban encima."),
+                                           "A Odette se le escapan cosas de los clientes. Pregúntale qué llevaban encima.",
+                                           "Odette talks about the regulars without thinking. Ask what they were carrying.",
+                                            "Odette parla dei clienti senza pensarci. Chiedile cosa portavano addosso."),
                 new LevelHint("o_asked",   "Demande à Odette ce qui s'est passé l'après-midi, avant le concert.",
-                                           "Pregúntale a Odette qué pasó esa tarde, antes del concierto."),
+                                           "Pregúntale a Odette qué pasó esa tarde, antes del concierto.",
+                                           "Ask Odette what happened that afternoon, before the performance.",
+                                            "Chiedi a Odette cos'è successo quel pomeriggio, prima del concerto."),
                 new LevelHint("c_signal",  "Le patron n'aime pas la question du morceau. Reviens dessus.",
-                                           "Al dueño no le gusta la pregunta de la pieza. Insiste."),
+                                           "Al dueño no le gusta la pregunta de la pieza. Insiste.",
+                                           "The owner doesn't like the question about the tune. Come back to it.",
+                                            "Al padrone non piace la domanda sul pezzo. Insisti."),
                 new LevelHint("c_someone_asked", "Demande à Corentin pourquoi il a donné ce signal ce soir-là.",
-                                           "Pregúntale a Corentin por qué dio esa señal justo esa noche."),
+                                           "Pregúntale a Corentin por qué dio esa señal justo esa noche.",
+                                           "Ask Corentin why he gave that signal that night.",
+                                            "Chiedi a Corentin perché ha dato quel segnale quella sera."),
                 new LevelHint("m_lie_gun", "Demande à Marcel s'il porte encore une arme.",
-                                           "Pregúntale a Marcel si todavía lleva arma."),
+                                           "Pregúntale a Marcel si todavía lleva arma.",
+                                           "Ask Marcel if he still carries a gun.",
+                                            "Chiedi a Marcel se porta ancora la pistola."),
                 new LevelHint("m_lie_time","Demande à Marcel à quelle heure il est parti.",
-                                           "Pregúntale a Marcel a qué hora se fue."),
+                                           "Pregúntale a Marcel a qué hora se fue.",
+                                           "Ask Marcel what time he left.",
+                                            "Chiedi a Marcel a che ora è andato via."),
                 new LevelHint("m_broken",  "Marcel a dit deux choses fausses. Mets-lui les deux devant, pas une.",
-                                           "Marcel ha dicho dos cosas falsas. Ponle las dos delante, no una."),
+                                           "Marcel ha dicho dos cosas falsas. Ponle las dos delante, no una.",
+                                           "Marcel said two false things. Put both to him, not one.",
+                                            "Marcel ha detto due cose false. Mettigliele davanti tutte e due, non una."),
                 new LevelHint("f_name",    "Le commissaire attend à sa table. Va lui dire qui c'était.",
-                                           "El comisario espera en su mesa. Ve a decirle quién fue."),
+                                           "El comisario espera en su mesa. Ve a decirle quién fue.",
+                                           "The inspector is waiting at his table. Go and tell him who it was.",
+                                            "Il commissario aspetta al suo tavolo. Vai a dirgli chi è stato."),
                 new LevelHint("f_lies",    "Un nom ne suffit pas. Raconte-lui les deux mensonges.",
-                                           "Un nombre no basta. Cuéntale las dos mentiras."),
+                                           "Un nombre no basta. Cuéntale las dos mentiras.",
+                                           "A name is not enough. Tell him both lies.",
+                                            "Un nome non basta. Raccontagli tutte e due le bugie."),
                 new LevelHint("f_motive",  "Dis-lui aussi que Marcel demandait par quelle porte Marius sortait.",
-                                           "Dile además que Marcel preguntaba por qué puerta salía Marius."),
+                                           "Dile además que Marcel preguntaba por qué puerta salía Marius.",
+                                           "Tell him too that Marcel was asking which door Marius used.",
+                                            "Digli anche che Marcel chiedeva da quale porta usciva Marius."),
             },
             // Un solo final. Cierra las tres cosas que el caso deja abiertas:
             // qué pasa con el culpable, qué pasa con Corentin —que es quien
@@ -360,6 +430,18 @@ public static class LevelDatabase
             // y quien lo consiguió ya lo ha oído de su boca, que es donde más
             // duele. El que investiga mejor no se lleva otro final, se lleva
             // haber estado delante.
+            briefTitleEn: "Case 1 — The violinist of the Dragon Vert",
+            briefSummaryEn: "Marius Toussaint, the violinist, was shot last night in the alley. Two things don't add up: he played a tune that wasn't his, and he cut his set ten minutes short.",
+            briefTitleIt: "Caso 1 — Il violinista del Dragon Vert",
+            briefSummaryIt: "Marius Toussaint, il violinista, è stato ucciso ieri sera nel vicolo. Due cose non tornano: ha suonato un pezzo che non era il suo, e ha chiuso il turno dieci minuti prima.",
+            epilogueIt:
+                "Marcel Charrier è stato arrestato quella sera stessa. Non ha opposto resistenza.\n\n" +
+                "Corentin ha saputo che il suo segnale — quello che doveva salvare Marius — è ciò che l'ha mandato nel vicolo dieci minuti troppo presto. Il caffè è rimasto chiuso tre giorni.\n\n" +
+                "Il violino è ancora sul bancone. Nessuno ha voluto spostarlo.",
+            epilogueEn:
+                "Marcel Charrier was arrested that same evening. He did not resist.\n\n" +
+                "Corentin learned that his signal — the one meant to save Marius — is what sent him into the alley ten minutes too early. The café stayed shut for three days.\n\n" +
+                "The violin is still on the counter. Nobody has wanted to move it.",
             epilogueFr:
                 "Marcel Charrier a été arrêté le soir même. Il n'a pas résisté.\n\n" +
                 "Corentin a appris que son signal — celui qui devait sauver Marius — est ce qui l'a envoyé dans la ruelle dix minutes trop tôt. Le café est resté fermé trois jours.\n\n" +

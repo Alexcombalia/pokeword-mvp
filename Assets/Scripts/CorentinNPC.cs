@@ -17,4 +17,16 @@ public class CorentinNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "El café está abierto. Es todo lo que puedo hacer hoy.";
+
+    protected override string GreetingEn =>
+        "The [café|café] is open. That is all I can do today.";
+
+    protected override string GreetingTranslationEn =>
+        "El café está abierto. Es todo lo que puedo hacer hoy.";
+
+    protected override string GreetingIt =>
+        "Il [caffè|café] è aperto. È tutto quello che posso fare oggi.";
+
+    protected override string GreetingTranslationIt =>
+        "El café está abierto. Es todo lo que puedo hacer hoy.";
 }

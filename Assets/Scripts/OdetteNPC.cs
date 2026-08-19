@@ -17,4 +17,16 @@ public class OdetteNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "Buenos días... El violín sigue en la barra. No he querido moverlo.";
+
+    protected override string GreetingEn =>
+        "Hello... The [violin|violín] is still on the counter. I didn't want to move it.";
+
+    protected override string GreetingTranslationEn =>
+        "Hola... El violín sigue en la barra. No he querido moverlo.";
+
+    protected override string GreetingIt =>
+        "Buongiorno... Il [violino|violín] è ancora sul bancone. Non ho voluto spostarlo.";
+
+    protected override string GreetingTranslationIt =>
+        "Buenos días... El violín sigue en la barra. No he querido moverlo.";
 }

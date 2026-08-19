@@ -19,4 +19,16 @@ public class LemaireNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "Escribí: el corazón. Era mayor. Es lo normal.";
+
+    protected override string GreetingEn =>
+        "I wrote: the heart. She was old. That is normal.";
+
+    protected override string GreetingTranslationEn =>
+        "Escribí: el corazón. Era mayor. Es lo normal.";
+
+    protected override string GreetingIt =>
+        "Ho scritto: il cuore. Era anziana. È normale.";
+
+    protected override string GreetingTranslationIt =>
+        "Escribí: el corazón. Era mayor. Es lo normal.";
 }

@@ -24,4 +24,16 @@ public class PoliceNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "Agente Bonnet. Espero un nombre.";
+
+    protected override string GreetingEn =>
+        "Officer Bonnet. I am waiting for a name.";
+
+    protected override string GreetingTranslationEn =>
+        "Agente Bonnet. Espero un nombre.";
+
+    protected override string GreetingIt =>
+        "Agente Bonnet. Aspetto un nome.";
+
+    protected override string GreetingTranslationIt =>
+        "Agente Bonnet. Espero un nombre.";
 }

@@ -44,6 +44,7 @@ public class DialogueSystem : MonoBehaviour
     private string genericGender;
     private bool genericMode = false;
     private DetectiveChatClient detectiveClient;
+    private PhraseTTSClient greetingTTS;
     private string detectiveDisplayName;
     private bool detectiveMode = false;
     private bool shopMode    = false;
@@ -104,7 +105,14 @@ public class DialogueSystem : MonoBehaviour
         if (dialogueInput != null)
         {
             if (dialogueInput.textComponent != null) dialogueInput.textComponent.fontSize = 28;
-            if (dialogueInput.placeholder is TMP_Text placeholderTxt) placeholderTxt.fontSize = 28;
+            if (dialogueInput.placeholder is TMP_Text placeholderTxt)
+            {
+                placeholderTxt.fontSize = 28;
+                // El texto de ayuda del campo vive en el prefab GlobalUI y estaba
+                // fijo en francés ("Écris ici..."). Se sobrescribe aquí porque un
+                // prefab no puede saber en qué idioma se está jugando.
+                placeholderTxt.text = LangText.Pick("Escribe aquí...", "Écris ici...", "Write here...", "Scrivi qui...");
+            }
         }
 
         BuildCloseButton();
@@ -470,11 +478,11 @@ public class DialogueSystem : MonoBehaviour
     // reply), so the player sees their own translation immediately instead of
     // waiting for the NPC to "finish speaking". `seq` guards against a late response
     // clobbering a newer message if the player sends again before this returns.
-    [System.Serializable] private class TranslateRequest { public string text; }
+    [System.Serializable] private class TranslateRequest { public string text; public string targetLang; }
 
     private IEnumerator TranslatePlayerMessage(string msg, int seq)
     {
-        string body = JsonUtility.ToJson(new TranslateRequest { text = msg });
+        string body = JsonUtility.ToJson(new TranslateRequest { text = msg, targetLang = GameSettings.TargetLanguage });
 
         using var request = new UnityWebRequest(TranslateUrl, "POST");
         request.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(body));
@@ -490,7 +498,7 @@ public class DialogueSystem : MonoBehaviour
         if (resp == null || !resp.ok || string.IsNullOrEmpty(resp.translation)) yield break;
 
         pendingPlayerTranslation = resp.translation;
-        chatPlayerLine = FormatLine("Toi", msg, pendingPlayerTranslation);
+        chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io"), msg, pendingPlayerTranslation);
         RefreshChatDisplay();
 
         // Este endpoint ligero vuelve en ~1s (frente a los ~3-4s de la respuesta
@@ -518,12 +526,22 @@ public class DialogueSystem : MonoBehaviour
 
         int seq = ++chatMessageSeq;
         pendingPlayerTranslation = null;
-        chatPlayerLine = "Toi: " + msg;
+        chatPlayerLine = LangText.Pick("Yo", "Toi", "Me", "Io") + ": " + msg;
 
         // Fires in parallel with the NPC call below — much smaller prompt, returns
         // in ~1s instead of ~3-4s, so the player sees their own translation right
         // away instead of waiting for the NPC to finish "speaking".
-        if (GameSettings.IsBasic)
+        //
+        // En modo detective NO se usa. Motivo: la respuesta del NPC ya trae esa
+        // misma traducción (playerMessageTranslation) y en el idioma correcto,
+        // así que esta llamada solo aportaba llegar antes — a cambio de ser una
+        // SEGUNDA fuente de verdad para el mismo texto. Y en cuanto el juego
+        // dejó de ser solo francés, las dos fuentes se separaron: esta traducía
+        // al francés en partidas inglesas.
+        //
+        // Se gana coherencia y una llamada menos por turno; se pierde que la
+        // traducción aparezca al instante en vez de con la respuesta.
+        if (GameSettings.IsBasic && !detectiveMode)
             StartCoroutine(TranslatePlayerMessage(msg, seq));
 
         // -------------------------
@@ -732,7 +750,7 @@ public class DialogueSystem : MonoBehaviour
                         currentCapturable[kvp.Key] = kvp.Value;
                     }
 
-                    chatPlayerLine = FormatLine("Toi", msg, pendingPlayerTranslation ?? playerMessageTranslation);
+                    chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io"), msg, pendingPlayerTranslation ?? playerMessageTranslation);
                     chatNpcLine    = FormatLine("Henry", processedReply, replyTranslation);
                     RefreshChatDisplay();
                 },
@@ -789,7 +807,7 @@ public class DialogueSystem : MonoBehaviour
                         extra = "\n\n[Boutique] Tu n'as pas assez d'argent.";
                 }
 
-                chatPlayerLine = FormatLine("Toi", msg, pendingPlayerTranslation ?? playerMessageTranslation);
+                chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io"), msg, pendingPlayerTranslation ?? playerMessageTranslation);
                 chatNpcLine    = FormatLine("Boulanger", processedReply, replyTranslation) + extra;
                 RefreshChatDisplay();
             },
@@ -1253,6 +1271,17 @@ public class DialogueSystem : MonoBehaviour
 
             if (GameSettings.IsBasic && !string.IsNullOrEmpty(greetingTranslation))
                 SpeechCaptionUI.Instance?.ShowTranslation(greetingTranslation);
+
+            // La frase de entrada se muestra desde el cliente, así que no venía
+            // con audio: era la única línea del juego que se leía y no se oía,
+            // en cualquier idioma. Se pide aparte con la voz del personaje.
+            if (greetingTTS == null) greetingTTS = gameObject.AddComponent<PhraseTTSClient>();
+            string greetingVoice = client.NpcId + GameSettings.DossierSuffix;   // "", "_en" o "_it"
+            StartCoroutine(greetingTTS.FetchAudio(
+                greeting,   // el servidor ya quita las etiquetas [fr|es] antes de sintetizar
+                audio => NPCVoicePlayer.Instance?.PlayVoice(audio),
+                _ => { },   // sin voz se sigue jugando: el texto ya está en pantalla
+                greetingVoice));
         }));
     }
 

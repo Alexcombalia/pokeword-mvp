@@ -15,14 +15,33 @@ public abstract class DetectiveNPC : MonoBehaviour
     // Nombre que se ve en el globo de pergamino.
     public abstract string DisplayName { get; }
 
-    // Frase de entrada, en francés, ya etiquetada con [francés|español] para
-    // que sus palabras se puedan capturar como cualquier otra.
+    // Frase de entrada, ya etiquetada con [idioma|español] para que sus
+    // palabras se puedan capturar como cualquier otra.
+    //
+    // Vive en el cliente, no en el servidor, porque se muestra ANTES de la
+    // primera llamada. Eso la deja fuera del sistema de idioma del servidor:
+    // si un personaje no da su versión inglesa, la conversación abre en
+    // francés aunque la partida sea en inglés. Fue justo lo que pasó al
+    // probar la primera versión inglesa.
     public abstract string Greeting { get; }
 
-    // Traducción de la frase de entrada. El modo detective es avanzado y no la
-    // usa, pero se deja escrita: es una sola frase fija por personaje y evita
-    // que quede sin traducir si algún día se abre el modo a débutant.
+    // Traducción al español de la frase de entrada, para el modo débutant.
     protected virtual string GreetingTranslation => null;
+
+    // Versión inglesa. Null en los personajes del caso avanzado, que solo
+    // existe en francés — ahí se usa la francesa y no pasa nada.
+    protected virtual string GreetingEn => null;
+    protected virtual string GreetingTranslationEn => null;
+    protected virtual string GreetingIt => null;
+    protected virtual string GreetingTranslationIt => null;
+
+    string ActiveGreeting =>
+        (GameSettings.IsEnglish && !string.IsNullOrEmpty(GreetingEn)) ? GreetingEn :
+        (GameSettings.IsItalian && !string.IsNullOrEmpty(GreetingIt)) ? GreetingIt : Greeting;
+
+    string ActiveGreetingTranslation =>
+        (GameSettings.IsEnglish && !string.IsNullOrEmpty(GreetingEn)) ? GreetingTranslationEn :
+        (GameSettings.IsItalian && !string.IsNullOrEmpty(GreetingIt)) ? GreetingTranslationIt : GreetingTranslation;
 
     private bool playerInRange = false;
     private DialogueSystem dialogueSystem;
@@ -48,7 +67,7 @@ public abstract class DetectiveNPC : MonoBehaviour
         if (!dialogueSystem.IsOpen() && (Input.GetKeyDown(KeyCode.E) || MobileInput.InteractPressed))
         {
             indicator?.Hide();
-            dialogueSystem.OpenDetectiveChat(chatClient, DisplayName, Greeting, GreetingTranslation, transform);
+            dialogueSystem.OpenDetectiveChat(chatClient, DisplayName, ActiveGreeting, ActiveGreetingTranslation, transform);
         }
     }
 

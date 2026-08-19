@@ -99,8 +99,10 @@ public class LevelHUD : MonoBehaviour
                 objBg.GetComponent<Image>().color = ParchmentSuccess;
                 objectiveText.text = detective
                     ? BuildCaseText(lm) + "\n" + (es
-                        ? "Caso cerrado. Cierra la conversación (X) cuando quieras."
-                        : "Affaire classée. Ferme la conversation (X) quand tu veux.")
+                        ? LangText.Pick("Caso cerrado. Cierra la conversación (X) cuando quieras.",
+                                        "Affaire classée. Ferme la conversation (X) quand tu veux.",
+                                        "Case closed. Close the conversation (X) whenever you like.",
+                                        "Caso chiuso. Chiudi la conversazione (X) quando vuoi.") : null)
                     : hasCheckpoints
                         ? BuildCheckpointText(lm) + "\n" + (es
                             ? "¡Completado! Cierra la conversación (X) cuando quieras."
@@ -121,16 +123,20 @@ public class LevelHUD : MonoBehaviour
             {
                 int starMins = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds / 60f);
                 starsLineText.text = es
-                    ? $"Resuelto  ·  El mentiroso  ·  menos de {starMins} min"
-                    : $"Résolu  ·  Le menteur  ·  moins de {starMins} min";
+                    ? LangText.Pick($"Resuelto  ·  El mentiroso  ·  menos de {starMins} min",
+                                    $"Résolu  ·  Le menteur  ·  moins de {starMins} min",
+                                    $"Solved  ·  The liar  ·  under {starMins} min",
+                                    $"Risolto  ·  Il bugiardo  ·  meno di {starMins} min") : null;
             }
             else
             {
-                int wordCount = lm.CurrentLevel.targetWords.Count;
+                int wordCount = lm.CurrentLevel.ActiveTargetWords.Count;
                 int starSecs  = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds);
                 starsLineText.text = es
-                    ? $"Objetivo  ·  {wordCount} palabras  ·  menos de {starSecs}s"
-                    : $"Objectif  ·  {wordCount} mots  ·  moins de {starSecs}s";
+                    ? LangText.Pick($"Objetivo  ·  {wordCount} palabras  ·  menos de {starSecs}s",
+                                    $"Objectif  ·  {wordCount} mots  ·  moins de {starSecs}s",
+                                    $"Objective  ·  {wordCount} words  ·  under {starSecs}s",
+                                    $"Obiettivo  ·  {wordCount} parole  ·  meno di {starSecs}s") : null;
             }
 
             // El caso empieza con cuatro objetivos y va sumando hallazgos, así
@@ -245,7 +251,7 @@ public class LevelHUD : MonoBehaviour
                 if (first)
                 {
                     sb.Append("\n\n<color=" + CapturedGreenHex + ">");
-                    sb.Append(GameSettings.IsBasic ? "Lo que sabes:" : "Ce que tu sais :");
+                    sb.Append(LangText.Pick("Lo que sabes:", "Ce que tu sais :", "What you know:", "Quello che sai:"));
                     sb.Append("</color>");
                     first = false;
                 }
@@ -261,9 +267,9 @@ public class LevelHUD : MonoBehaviour
         if (lm.CurrentLevel == null) return;
         bool showSpanish = GameSettings.IsBasic;
 
-        for (int i = 0; i < lm.CurrentLevel.targetWords.Count && i < wordEntries.Count; i++)
+        for (int i = 0; i < lm.CurrentLevel.ActiveTargetWords.Count && i < wordEntries.Count; i++)
         {
-            var tw = lm.CurrentLevel.targetWords[i];
+            var tw = lm.CurrentLevel.ActiveTargetWords[i];
             bool captured = lm.IsWordCaptured(tw.french);
 
             string french = $"<color={(captured ? CapturedGreenHex : FrenchHexOnLight)}>{tw.french}</color>";
@@ -280,14 +286,14 @@ public class LevelHUD : MonoBehaviour
     {
         builtForLevel = def;
         ApplyLayoutFor(def);
-        headerTxt.text = GameSettings.IsBasic ? "Palabras a encontrar" : "Mots à trouver";
+        headerTxt.text = LangText.Pick("Palabras a encontrar", "Mots à trouver", "Words to find", "Parole da trovare");
         foreach (Transform child in entriesContainer.transform) Destroy(child.gameObject);
         wordEntries.Clear();
 
         if (def == null) return;
 
         float y = 0f;
-        foreach (var tw in def.targetWords)
+        foreach (var tw in def.ActiveTargetWords)
         {
             var go = new GameObject("Word_" + tw.french, typeof(RectTransform));
             go.transform.SetParent(entriesContainer.transform, false);
@@ -564,8 +570,8 @@ public class LevelHUD : MonoBehaviour
         if (hintBtnLabel == null) return;
         bool es = GameSettings.IsBasic;
         hintBtnLabel.text = lm != null && lm.HintUsed
-            ? (es ? "Pista" : "Indice")
-            : (es ? "Pista  (-1 estrella)" : "Indice  (-1 étoile)");
+            ? (LangText.Pick("Pista", "Indice", "Hint", "Indizio"))
+            : (LangText.Pick("Pista  (-1 estrella)", "Indice  (-1 étoile)", "Hint  (-1 star)", "Indizio  (-1 stella)"));
     }
 
     // El HUD se construye una vez con la forma de un nivel débutant (una línea

@@ -151,7 +151,13 @@ public class VoiceRecorder : MonoBehaviour
 
     private IEnumerator Send(string base64, int sampleRate, Action<string> onResult, Action<string> onError, string languageHint)
     {
+        // targetLang va SIEMPRE, incluso sin languageHint: sin él, el servidor
+        // reconocería en francés + español por defecto, y en una partida en
+        // inglés eso transcribe cualquier cosa menos lo que el jugador dijo.
+        // languageHint sigue siendo distinto — ese fija el idioma sin
+        // alternativa, para cuando se sabe con certeza (leer una frase).
         string json = "{\"audioBase64\":\"" + base64 + "\",\"sampleRate\":" + sampleRate
+            + ",\"targetLang\":\"" + GameSettings.TargetLanguage + "\""
             + (string.IsNullOrEmpty(languageHint) ? "" : ",\"languageHint\":\"" + languageHint + "\"")
             + "}";
         byte[] body = System.Text.Encoding.UTF8.GetBytes(json);

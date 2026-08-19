@@ -10,12 +10,19 @@ public class PhraseTTSClient : MonoBehaviour
 {
     private const string serverUrl = "https://pokeword-npc-server-kvml-production.up.railway.app/voice/synthesize";
 
-    [System.Serializable] private class SynthRequest  { public string text; }
+    [System.Serializable] private class SynthRequest  { public string text; public string voiceId; }
     [System.Serializable] private class SynthResponse { public bool ok; public string audioBase64; }
 
-    public IEnumerator FetchAudio(string text, System.Action<string> onAudioBase64, System.Action<string> onError)
+    // voiceId opcional: null usa la voz de lectura del idioma activo (botón de
+    // pronunciación). Pasarlo sirve para que una frase suene con la voz de un
+    // personaje concreto — el saludo de entrada de cada NPC, que se muestra
+    // desde el cliente y por tanto no viene con audio del servidor.
+    public IEnumerator FetchAudio(string text, System.Action<string> onAudioBase64, System.Action<string> onError, string voiceId = null)
     {
-        var req = new SynthRequest { text = text };
+        // Sin voiceId el servidor usaba la voz genérica, que es francesa: en una
+        // partida en inglés se oía el texto inglés leído con acento francés.
+        string voice = voiceId ?? (GameSettings.IsEnglish ? "read_en" : GameSettings.IsItalian ? "read_it" : "generic");
+        var req = new SynthRequest { text = text, voiceId = voice };
         string json = JsonUtility.ToJson(req);
 
         using (var request = new UnityWebRequest(serverUrl, "POST"))

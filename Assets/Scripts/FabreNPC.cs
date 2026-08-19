@@ -20,4 +20,16 @@ public class FabreNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "Un robo que salió mal. Pasa, en este barrio.";
+
+    protected override string GreetingEn =>
+        "A [robbery|robo] gone wrong. It happens, in this [neighbourhood|barrio].";
+
+    protected override string GreetingTranslationEn =>
+        "Un robo que salió mal. Pasa, en este barrio.";
+
+    protected override string GreetingIt =>
+        "Una [rapina|robo] finita male. Succede, in questo [quartiere|barrio].";
+
+    protected override string GreetingTranslationIt =>
+        "Un robo que salió mal. Pasa, en este barrio.";
 }

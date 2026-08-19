@@ -1,5 +1,20 @@
 using System.Collections.Generic;
 
+// Elige el texto según el papel de cada idioma: en débutant manda el español
+// (el jugador no entiende el idioma objetivo), y en avancé manda el idioma que
+// se está aprendiendo. `en` puede ser null en contenido que solo existe en
+// francés — entonces se cae al francés y no se rompe nada.
+public static class LangText
+{
+    public static string Pick(string es, string fr, string en = null, string it = null)
+    {
+        if (GameSettings.IsBasic) return es;
+        if (GameSettings.IsEnglish && !string.IsNullOrEmpty(en)) return en;
+        if (GameSettings.IsItalian && !string.IsNullOrEmpty(it)) return it;
+        return fr;   // idioma original, y red de seguridad si falta traducción
+    }
+}
+
 [System.Serializable]
 public class TargetWord
 {
@@ -22,14 +37,20 @@ public class LevelCheckpoint
     public string labelFr;
     public string labelEs;
 
-    public LevelCheckpoint(string id, string labelFr, string labelEs)
+    public string labelEn;
+
+    public string labelIt;
+
+    public LevelCheckpoint(string id, string labelFr, string labelEs, string labelEn = null, string labelIt = null)
     {
         this.id      = id;
         this.labelFr = labelFr;
         this.labelEs = labelEs;
+        this.labelEn = labelEn;
+        this.labelIt = labelIt;
     }
 
-    public string DisplayLabel => GameSettings.IsBasic ? labelEs : labelFr;
+    public string DisplayLabel => LangText.Pick(labelEs, labelFr, labelEn, labelIt);
 }
 
 // MODO DETECTIVE — una línea del checklist de objetivos.
@@ -43,6 +64,8 @@ public class LevelObjective
     public string labelEs;
     public string[] requiredIds;
 
+    public string labelEn;
+
     public LevelObjective(string labelFr, string labelEs, params string[] requiredIds)
     {
         this.labelFr     = labelFr;
@@ -50,7 +73,20 @@ public class LevelObjective
         this.requiredIds = requiredIds;
     }
 
-    public string DisplayLabel => GameSettings.IsBasic ? labelEs : labelFr;
+    // Sobrecarga con inglés. Separada porque `params` tiene que ir el último
+    // y no admite un opcional detrás.
+    public string labelIt;
+
+    public LevelObjective(string labelFr, string labelEs, string labelEn, string[] requiredIds, string labelIt = null)
+    {
+        this.labelFr     = labelFr;
+        this.labelEs     = labelEs;
+        this.labelEn     = labelEn;
+        this.labelIt     = labelIt;
+        this.requiredIds = requiredIds;
+    }
+
+    public string DisplayLabel => LangText.Pick(labelEs, labelFr, labelEn, labelIt);
 }
 
 // MODO DETECTIVE — un hallazgo. Cuando el jugador oye el dato y el servidor
@@ -64,14 +100,20 @@ public class LevelFinding
     public string textFr;
     public string textEs;
 
-    public LevelFinding(string id, string textFr, string textEs)
+    public string textEn;
+
+    public string textIt;
+
+    public LevelFinding(string id, string textFr, string textEs, string textEn = null, string textIt = null)
     {
         this.id     = id;
         this.textFr = textFr;
         this.textEs = textEs;
+        this.textEn = textEn;
+        this.textIt = textIt;
     }
 
-    public string DisplayText => GameSettings.IsBasic ? textEs : textFr;
+    public string DisplayText => LangText.Pick(textEs, textFr, textEn, textIt);
 }
 
 // Una pista del botón de ayuda. Se muestra la PRIMERA cuyo `untilId` aún no
@@ -87,14 +129,20 @@ public class LevelHint
     public string textFr;
     public string textEs;
 
-    public LevelHint(string untilId, string textFr, string textEs)
+    public string textEn;
+
+    public string textIt;
+
+    public LevelHint(string untilId, string textFr, string textEs, string textEn = null, string textIt = null)
     {
         this.untilId = untilId;
         this.textFr  = textFr;
         this.textEs  = textEs;
+        this.textEn  = textEn;
+        this.textIt  = textIt;
     }
 
-    public string DisplayText => GameSettings.IsBasic ? textEs : textFr;
+    public string DisplayText => LangText.Pick(textEs, textFr, textEn, textIt);
 }
 
 // A level's fixed configuration — box "El Puerto", pilot caja (see memory:
@@ -162,6 +210,30 @@ public class LevelDefinition
     // Líneas verdes que se van escribiendo solas según se descubren.
     public List<LevelFinding> findings;
 
+    // Palabras objetivo cuando el idioma que se aprende NO es el francés.
+    // null = este nivel solo existe en francés y `targetWords` vale.
+    //
+    // Es lo único del nivel que cambia con el idioma: los objetivos, hallazgos
+    // y pistas se muestran en español en débutant, así que sirven igual. Lo
+    // que cambia de verdad son los expedientes, y esos viven en el servidor.
+    public List<TargetWord> targetWordsEn;
+    public List<TargetWord> targetWordsIt;
+
+    // Textos del nivel en inglés, para partidas avanzadas que se juegan en
+    // inglés. En débutant no hacen falta: allí siempre se ve el español.
+    public string briefTitleEn, briefSummaryEn, epilogueEn, epilogueFailEn;
+    public string briefTitleIt, briefSummaryIt, epilogueIt, epilogueFailIt;
+
+    public List<TargetWord> ActiveTargetWords
+    {
+        get
+        {
+            if (GameSettings.IsEnglish && targetWordsEn != null && targetWordsEn.Count > 0) return targetWordsEn;
+            if (GameSettings.IsItalian && targetWordsIt != null && targetWordsIt.Count > 0) return targetWordsIt;
+            return targetWords;
+        }
+    }
+
     // Pistas del botón de ayuda, en orden de investigación. Requiere
     // hintAvailable. Usar una cuesta 1 estrella (una sola vez, por muchas
     // que se pidan — ver LevelManager.HintUsed).
@@ -200,7 +272,13 @@ public class LevelDefinition
         bool detectiveMode = false, int displayNumber = 0, string secondStarCheckpoint = null,
         List<LevelObjective> objectives = null, List<LevelFinding> findings = null,
         List<LevelHint> hints = null, string epilogueFr = null, string epilogueEs = null,
-        string epilogueFailFr = null, string epilogueFailEs = null, string failCheckpoint = null)
+        string epilogueFailFr = null, string epilogueFailEs = null, string failCheckpoint = null,
+        List<TargetWord> targetWordsEn = null,
+        string briefTitleEn = null, string briefSummaryEn = null,
+        string epilogueEn = null, string epilogueFailEn = null,
+        List<TargetWord> targetWordsIt = null,
+        string briefTitleIt = null, string briefSummaryIt = null,
+        string epilogueIt = null, string epilogueFailIt = null)
     {
         this.id               = id;
         this.title             = title;
@@ -228,6 +306,16 @@ public class LevelDefinition
         this.epilogueFailFr    = epilogueFailFr;
         this.epilogueFailEs    = epilogueFailEs;
         this.failCheckpoint    = failCheckpoint;
+        this.targetWordsEn     = targetWordsEn;
+        this.briefTitleEn      = briefTitleEn;
+        this.briefSummaryEn    = briefSummaryEn;
+        this.epilogueEn        = epilogueEn;
+        this.epilogueFailEn    = epilogueFailEn;
+        this.targetWordsIt     = targetWordsIt;
+        this.briefTitleIt      = briefTitleIt;
+        this.briefSummaryIt    = briefSummaryIt;
+        this.epilogueIt        = epilogueIt;
+        this.epilogueFailIt    = epilogueFailIt;
     }
 
     // Siguiente pista útil: la primera cuyo reto todavía no se ha alcanzado.
@@ -239,11 +327,11 @@ public class LevelDefinition
         return null;
     }
 
-    public string DisplayTitle   => GameSettings.IsBasic ? briefTitleEs   : briefTitle;
-    public string DisplaySummary => GameSettings.IsBasic ? briefSummaryEs : briefSummary;
+    public string DisplayTitle   => LangText.Pick(briefTitleEs,   briefTitle,   briefTitleEn,   briefTitleIt);
+    public string DisplaySummary => LangText.Pick(briefSummaryEs, briefSummary, briefSummaryEn, briefSummaryIt);
     public int    TileNumber     => displayNumber > 0 ? displayNumber : id;
-    public string DisplayEpilogue     => GameSettings.IsBasic ? epilogueEs     : epilogueFr;
-    public string DisplayEpilogueFail => GameSettings.IsBasic ? epilogueFailEs : epilogueFailFr;
+    public string DisplayEpilogue     => LangText.Pick(epilogueEs,     epilogueFr,     epilogueEn,     epilogueIt);
+    public string DisplayEpilogueFail => LangText.Pick(epilogueFailEs, epilogueFailFr, epilogueFailEn, epilogueFailIt);
 }
 
 // Best result reached so far for a level — persisted via SaveSystem.

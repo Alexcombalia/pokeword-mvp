@@ -85,11 +85,24 @@ public class SpeechCaptionUI : MonoBehaviour
         // idiomas dentro de la misma burbuja (nombre + francés + traducción)
         // puede llegar a 3 líneas, así que necesita más margen que antes.
         float marginTop    = 480f;
-        float marginSide   = 60f;
         float minY = canvasRT.rect.yMin + 60f;
         float maxY = canvasRT.rect.yMax - marginTop;
         localPoint.y = Mathf.Clamp(localPoint.y, minY, maxY);
-        localPoint.x = Mathf.Clamp(localPoint.x, canvasRT.rect.xMin + marginSide, canvasRT.rect.xMax - marginSide);
+
+        // El clamp horizontal sujetaba el CENTRO del globo con 60 de margen,
+        // no sus bordes. Con una burbuja de 620 de ancho y pivote centrado eso
+        // dejaba salirse ~250 px por el lado: con un NPC pegado al borde de la
+        // escena —el doctor y el agente lo están— media burbuja quedaba fuera
+        // de la pantalla. Ahora se sujeta contando su anchura real, así que el
+        // globo entero cabe siempre.
+        float halfWidth  = bubbleRT.rect.width * 0.5f;
+        float marginSide = 24f;
+        float minX = canvasRT.rect.xMin + halfWidth + marginSide;
+        float maxX = canvasRT.rect.xMax - halfWidth - marginSide;
+
+        // Si el globo fuera más ancho que el canvas no hay margen que valga y
+        // Mathf.Clamp con min > max devolvería basura: se centra y ya.
+        localPoint.x = (minX <= maxX) ? Mathf.Clamp(localPoint.x, minX, maxX) : 0f;
 
         bubbleRT.anchoredPosition = localPoint;
     }
@@ -255,7 +268,9 @@ public class SpeechCaptionUI : MonoBehaviour
         playerBubble = BuildBubble(stackRT, "PlayerBubble", InkDark, 620,
             withName: true, withRaycast: false,
             out _, out var playerNameLabel, out playerText);
-        playerNameLabel.text = "MOI";
+        // La etiqueta del jugador estaba fija en francés, incluso en débutant, donde
+        // todo lo demás está en español. Sigue el mismo criterio que el resto.
+        playerNameLabel.text = LangText.Pick("YO", "MOI", "ME", "IO");
         playerText.color = FrenchInk;
 
         // Segunda línea, debajo del cuerpo — traducción al francés cuando el

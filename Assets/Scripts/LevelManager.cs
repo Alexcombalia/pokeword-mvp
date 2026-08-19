@@ -28,6 +28,12 @@ public class LevelManager : MonoBehaviour
     // un mismo turno NO cuenta aquí, solo pulsar el botón cuenta.
     public int             SkipCount        { get; private set; }
 
+    // A partir de este número de saltos en el nivel se pierde 1 estrella.
+    // Público y con nombre porque el botón Saltar tiene que poder avisar del
+    // coste antes de cobrarlo (ver BeginnerTurnController.RefreshSkipLabel);
+    // antes era un 3 suelto aquí y el jugador no se enteraba de nada.
+    public const int SkipPenaltyThreshold = 3;
+
     // Ids de retos (LevelDefinition.checkpoints) ya alcanzados en ESTE
     // nivel — se van sumando desde CUALQUIER NPC con objetivo de la escena
     // (ver ReportCheckpoints). El nivel se da por completo en cuanto
@@ -196,7 +202,7 @@ public class LevelManager : MonoBehaviour
     {
         if (CurrentLevel == null || string.IsNullOrEmpty(frenchWord)) return false;
         string w = NormalizeFrenchWord(frenchWord);
-        foreach (var tw in CurrentLevel.targetWords)
+        foreach (var tw in CurrentLevel.ActiveTargetWords)
             if (NormalizeFrenchWord(tw.french) == w) return true;
         return false;
     }
@@ -247,7 +253,7 @@ public class LevelManager : MonoBehaviour
         if (CurrentLevel == null) return 0;
 
         int count = 0;
-        foreach (var tw in CurrentLevel.targetWords)
+        foreach (var tw in CurrentLevel.ActiveTargetWords)
             if (IsWordCaptured(tw.french)) count++;
         return count;
     }
@@ -292,8 +298,8 @@ public class LevelManager : MonoBehaviour
         // detective, distinta segunda estrella, sin ramas por dificultad.
         bool starWords = !string.IsNullOrEmpty(CurrentLevel.secondStarCheckpoint)
             ? CheckpointsReached.Contains(CurrentLevel.secondStarCheckpoint)
-            : (CurrentLevel.targetWords.Count > 0 &&
-               CapturedTargetCount() >= CurrentLevel.targetWords.Count);
+            : (CurrentLevel.ActiveTargetWords.Count > 0 &&
+               CapturedTargetCount() >= CurrentLevel.ActiveTargetWords.Count);
 
         bool starSpeed = success && elapsed <= CurrentLevel.starTimeSeconds;
 
@@ -302,7 +308,7 @@ public class LevelManager : MonoBehaviour
         // Pista y saltos son válvulas de escape distintas ("no lo sé" vs "no
         // consigo pasar la lectura") — deducciones independientes, hasta -2
         // si se usaron ambas, más simple de razonar que "gana la peor".
-        bool skipPenalty = SkipCount >= 3;
+        bool skipPenalty = SkipCount >= SkipPenaltyThreshold;
         int stars = rawStars;
         if (HintUsed)    stars = Mathf.Max(0, stars - 1);
         if (skipPenalty) stars = Mathf.Max(0, stars - 1);

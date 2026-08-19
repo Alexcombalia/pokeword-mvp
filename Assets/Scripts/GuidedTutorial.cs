@@ -87,7 +87,28 @@ public class GuidedTutorial : MonoBehaviour
             new Vector2(-80, 560), vertical: true);
         yield return WaitForPokeWorldClose();
 
-        // ── Paso 4 — hablar (botón E, en MobileControlsSetup: pos (140,260)) ──
+        // ── Paso 4 — el botón de pista (LevelHUD, esquina inferior izquierda,
+        // pos (24,28) con pivote (0,0), o sea centro en (144,60)) ──
+        //
+        // Solo si el nivel tiene pistas. Va ANTES de "hablar" porque ese paso
+        // termina con el diálogo abierto tapando la pantalla, y ya no habría
+        // dónde enseñar esto.
+        //
+        // Este paso NO espera a que se pulse: usar una pista cuesta una
+        // estrella, y obligar al jugador a gastarla para pasar el tutorial
+        // sería cobrarle por aprender dónde está el botón. Se enseña, se dice
+        // lo que cuesta, y se sigue.
+        var lvl = LevelManager.Instance?.CurrentLevel;
+        if (lvl != null && lvl.hintAvailable && lvl.hints != null && lvl.hints.Count > 0)
+        {
+            ShowStep(
+                es ? "¿Atascado? Aquí tienes una pista.\nTe cuesta una estrella." : "Bloqué ? Ici, un indice.\nÇa coûte une étoile.",
+                new Vector2(0f, 0f), new Vector2(330, 340), new Vector2(440, 170),
+                new Vector2(144, 150), vertical: true);
+            yield return new WaitForSecondsRealtime(4.5f);
+        }
+
+        // ── Paso 5 — hablar (botón E, en MobileControlsSetup: pos (140,260)) ──
         ShowStep(
             es ? "Acércate a alguien y pulsa aquí para hablar" : "Approche-toi de quelqu'un et appuie ici pour parler",
             new Vector2(0f, 0f), new Vector2(320, 580), new Vector2(420, 150),

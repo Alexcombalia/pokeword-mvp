@@ -21,4 +21,16 @@ public class NadiaNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "Gracias por venir. El médico dice: el corazón. Yo no me lo creo.";
+
+    protected override string GreetingEn =>
+        "Thank you for coming. The [doctor|médico] says: her heart. I don't believe it.";
+
+    protected override string GreetingTranslationEn =>
+        "Gracias por venir. El médico dice: el corazón. Yo no me lo creo.";
+
+    protected override string GreetingIt =>
+        "Grazie di essere venuto. Il [dottore|médico] dice: il cuore. Io non ci credo.";
+
+    protected override string GreetingTranslationIt =>
+        "Gracias por venir. El médico dice: el corazón. Yo no me lo creo.";
 }

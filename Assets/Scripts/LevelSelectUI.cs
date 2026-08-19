@@ -64,17 +64,19 @@ public class LevelSelectUI : MonoBehaviour
         briefSummaryText.text = def.DisplaySummary;
 
         bool es = GameSettings.IsBasic;
-        int wordCount = def.targetWords.Count;
+        int wordCount = def.ActiveTargetWords.Count;
         int starSecs  = Mathf.CeilToInt(def.starTimeSeconds);
         // Nada de "★" aquí a propósito — ese glyph no existe en la fuente
         // TMP por defecto y se ve como un cuadrado vacío (mismo bug que ya
         // se corrigió en las estrellas de verdad, ver StarIcon.cs).
-        briefStarsText.text = es
-            ? $"- Consigue el objetivo\n- Captura las {wordCount} palabras clave\n- Hazlo en menos de {starSecs}s"
-            : $"- Atteins l'objectif\n- Capture les {wordCount} mots clés\n- Fais-le en moins de {starSecs}s";
+        briefStarsText.text = LangText.Pick(
+            $"- Consigue el objetivo\n- Captura las {wordCount} palabras clave\n- Hazlo en menos de {starSecs}s",
+            $"- Atteins l'objectif\n- Capture les {wordCount} mots clés\n- Fais-le en moins de {starSecs}s",
+            $"- Reach the objective\n- Capture the {wordCount} key words\n- Do it in under {starSecs}s",
+            $"- Raggiungi l'obiettivo\n- Cattura le {wordCount} parole chiave\n- Fallo in meno di {starSecs}s");
 
-        startBtnLabel.text     = es ? "EMPEZAR" : "COMMENCER";
-        briefBackBtnLabel.text = es ? "Volver" : "Retour";
+        startBtnLabel.text     = LangText.Pick("EMPEZAR", "COMMENCER", "START", "INIZIA");
+        briefBackBtnLabel.text = LangText.Pick("Volver", "Retour", "Back", "Indietro");
     }
 
     void StartSelected()
@@ -88,7 +90,7 @@ public class LevelSelectUI : MonoBehaviour
     {
         foreach (Transform child in gridPanel.transform) Destroy(child.gameObject);
 
-        MakeLabel(gridPanel.transform, "Title", GameSettings.IsBasic ? "NIVELES" : "NIVEAUX",
+        MakeLabel(gridPanel.transform, "Title", LangText.Pick("NIVELES", "NIVEAUX", "LEVELS", "LIVELLI"),
                   new Vector2(0, 780), new Vector2(600, 70),
                   44, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
 
@@ -109,7 +111,7 @@ public class LevelSelectUI : MonoBehaviour
         blRT.anchorMin = Vector2.zero; blRT.anchorMax = Vector2.one;
         blRT.anchoredPosition = Vector2.zero; blRT.sizeDelta = Vector2.zero;
         var backTxt = backLbl.AddComponent<TextMeshProUGUI>();
-        backTxt.text = GameSettings.IsBasic ? "< Volver" : "< Retour";
+        backTxt.text = LangText.Pick("< Volver", "< Retour", "< Back", "< Indietro");
         backTxt.fontSize = 26;
         backTxt.color = Cream;
         backTxt.alignment = TextAlignmentOptions.Left;
@@ -199,7 +201,7 @@ public class LevelSelectUI : MonoBehaviour
             lRT.anchorMin = new Vector2(0, 0f); lRT.anchorMax = new Vector2(1, 0.4f);
             lRT.offsetMin = Vector2.zero; lRT.offsetMax = Vector2.zero;
             var lockedTxt = lockedGO.AddComponent<TextMeshProUGUI>();
-            lockedTxt.text      = GameSettings.IsBasic ? "Próximamente" : "Bientôt";
+            lockedTxt.text      = LangText.Pick("Próximamente", "Bientôt", "Coming soon", "Prossimamente");
             lockedTxt.fontSize  = 19;
             lockedTxt.color     = CreamDim;
             lockedTxt.alignment = TextAlignmentOptions.Center;

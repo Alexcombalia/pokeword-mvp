@@ -21,4 +21,16 @@ public class MarcelNPC : DetectiveNPC
 
     protected override string GreetingTranslation =>
         "Marcel Charrier. Un antiguo del cuerpo. Si puedo ayudarle, de policía a policía.";
+
+    protected override string GreetingEn =>
+        "Marcel Charrier. One of the old force. If I can help you, from one policeman to another.";
+
+    protected override string GreetingTranslationEn =>
+        "Marcel Charrier. Un antiguo del cuerpo. Si puedo ayudarle, de policía a policía.";
+
+    protected override string GreetingIt =>
+        "Marcel Charrier. Uno della vecchia guardia. Se posso aiutarla, da poliziotto a poliziotto.";
+
+    protected override string GreetingTranslationIt =>
+        "Marcel Charrier. Un antiguo del cuerpo. Si puedo ayudarle, de policía a policía.";
 }

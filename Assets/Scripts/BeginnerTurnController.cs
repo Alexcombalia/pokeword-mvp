@@ -57,6 +57,7 @@ public class BeginnerTurnController : MonoBehaviour
     TMP_Text   recordBtnLabel;
     Image      recordBtnImg;
     GameObject skipBtnGO;
+    TMP_Text   skipBtnLabel;
     GameObject playBtnGO;
     TMP_Text   playBtnLabel;
     Image      playBtnImg;
@@ -116,11 +117,15 @@ public class BeginnerTurnController : MonoBehaviour
 
         var level       = LevelManager.Instance?.CurrentLevel;
         int levelId      = level?.id ?? 1;
-        var targetWords  = level?.targetWords ?? new List<TargetWord>();
+        var targetWords  = level?.ActiveTargetWords ?? new List<TargetWord>();
         string masked    = PhraseMasker.Mask(phrase, targetWords, levelId);
 
         bool es = GameSettings.IsBasic;
-        headerText.text = es ? "AHORA LÉELO EN FRANCÉS" : "MAINTENANT LIS-LE EN FRANÇAIS";
+        // Decía "EN FRANCÉS" a fuego, incluso jugando en inglés o italiano — y es
+        // la instrucción más importante de la pantalla, la que dice qué hacer.
+        headerText.text = es
+            ? "AHORA LÉELO EN " + GameSettings.TargetLanguageName.ToUpper()
+            : "MAINTENANT LIS-LE EN FRANÇAIS";
         phraseText.text = masked;
 
         if (!string.IsNullOrEmpty(phonetic))
@@ -171,7 +176,7 @@ public class BeginnerTurnController : MonoBehaviour
             recorder.StopAndTranscribe(
                 onResult: HandleTranscription,
                 onError: _ => HandleAttemptFailed(technical: true),
-                languageHint: "fr"
+                languageHint: GameSettings.TargetLanguage
             );
         }
     }
@@ -262,7 +267,27 @@ public class BeginnerTurnController : MonoBehaviour
             : (es ? "Inténtalo de nuevo" : "Réessaie");
 
         if (attemptCount >= MaxAttemptsBeforeSkip)
+        {
+            RefreshSkipLabel();
             skipBtnGO.SetActive(true);
+        }
+    }
+
+    // Saltar es gratis las dos primeras veces del nivel y a la tercera cuesta
+    // una estrella (LevelManager.SkipCount >= 3, ver EndLevel). El botón decía
+    // solo "SALTAR", así que el jugador perdía una estrella sin que nadie se
+    // lo hubiera advertido — y el botón de pista, que cuesta lo mismo, sí lo
+    // avisa en su etiqueta. Se avisa cuando el SIGUIENTE salto es el que cobra.
+    void RefreshSkipLabel()
+    {
+        if (skipBtnLabel == null) return;
+        bool es = GameSettings.IsBasic;
+        int used = LevelManager.Instance != null ? LevelManager.Instance.SkipCount : 0;
+        bool nextOneCosts = used >= LevelManager.SkipPenaltyThreshold - 1;
+
+        skipBtnLabel.text = nextOneCosts
+            ? (es ? "SALTAR  (-1 estrella)" : "PASSER  (-1 étoile)")
+            : (es ? "SALTAR" : "PASSER");
     }
 
     void OnSkipClicked()
@@ -332,7 +357,7 @@ public class BeginnerTurnController : MonoBehaviour
         var bImg = borderGO.GetComponent<Image>();
         bImg.sprite = ParchmentSprite.GetInk(); bImg.type = Image.Type.Sliced; bImg.color = Color.white;
 
-        headerText = MakeLabel(card.transform, "Header", "AHORA LÉELO EN FRANCÉS",
+        headerText = MakeLabel(card.transform, "Header", "",   // lo pone RunTurn según el idioma
             new Vector2(0, 300), new Vector2(560, 60), 26, GoldInk, TextAlignmentOptions.Center, FontStyles.Bold);
 
         phraseText = MakeLabel(card.transform, "Phrase", "",
@@ -447,6 +472,7 @@ public class BeginnerTurnController : MonoBehaviour
         slRT.anchoredPosition = Vector2.zero; slRT.sizeDelta = Vector2.zero;
         var skTxt = skLbl.AddComponent<TextMeshProUGUI>();
         skTxt.text      = GameSettings.IsBasic ? "SALTAR" : "PASSER";
+        skipBtnLabel    = skTxt;
         skTxt.fontSize  = 24;
         skTxt.color     = Color.white;
         skTxt.alignment = TextAlignmentOptions.Center;

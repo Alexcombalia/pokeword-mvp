@@ -81,6 +81,74 @@ public class MainMenuController : MonoBehaviour
 
     // ── UI builder ────────────────────────────────────────────────────────
 
+    GameObject langScreen;
+    TMP_Text   taglineTxt;
+    TMP_Text   advanceBtnTxt, debutantBtnTxt, resetBtnTxt, quitBtnTxt;
+
+    // Rótulos del menú en el idioma que se aprende. El menú del juego siempre
+    // estuvo en francés como parte de la ambientación; ahora hay dos idiomas.
+    void ApplyMenuLanguage()
+    {
+        // Mismo criterio que el resto del juego: LangText.Pick decide, y aquí
+        // el primer argumento (español) no se usa nunca — el menú va siempre en
+        // el idioma que se aprende. Se pasa igual para no inventar otra regla.
+        string P(string fr, string en, string it) => GameSettings.IsItalian ? it : GameSettings.IsEnglish ? en : fr;
+
+        if (taglineTxt      != null) taglineTxt.text      = P("Apprends le français en enquêtant", "Aprende inglés investigando", "Aprende italiano investigando");
+        if (advanceBtnTxt   != null) advanceBtnTxt.text   = P("MODE AVANCÉ",   "ADVANCED MODE", "MODO AVANZATO");
+        if (debutantBtnTxt  != null) debutantBtnTxt.text  = P("MODE DÉBUTANT", "BEGINNER MODE", "MODO PRINCIPIANTE");
+        if (resetBtnTxt     != null) resetBtnTxt.text     = P("Recommencer depuis le début", "Start from the beginning", "Ricomincia da capo");
+        if (quitBtnTxt      != null) quitBtnTxt.text      = P("Quitter", "Quit", "Esci");
+    }
+
+    // Primera pantalla al abrir el juego: qué idioma se quiere aprender.
+    //
+    // Lo que cambia NO es la interfaz —esa sigue en español— sino lo que
+    // hablan los NPCs. Por eso la pregunta es "¿qué idioma quieres aprender?"
+    // y no "¿en qué idioma quieres jugar?": son cosas distintas y confundirlas
+    // haría que un jugador esperase el menú en inglés.
+    //
+    // Aparece SIEMPRE, no solo la primera vez. Mientras esto se esté testeando
+    // interesa poder cambiar de idioma sin borrar la partida; cuando el juego
+    // salga, basta con saltarla si ya hay idioma guardado.
+    void BuildLanguageScreen(Transform root)
+    {
+        langScreen = Rect("LangScreen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        langScreen.GetComponent<Image>().color = BgDeep;
+
+        MakeLabel("LangTitle", langScreen.transform, "P O K E W O R D",
+            new Vector2(0, 260), new Vector2(900, 90),
+            56f, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
+
+        MakeLabel("LangQuestion", langScreen.transform, "¿Qué idioma quieres aprender?",
+            new Vector2(0, 120), new Vector2(900, 50),
+            28f, Cream, TextAlignmentOptions.Center, FontStyles.Normal);
+
+        MakeBtn("BtnFrench", langScreen.transform, "FRANCÉS",
+            new Vector2(0, 20), new Vector2(440, 78),
+            Gold, BgDeep, 30f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangFrench), bordered: true);
+
+        MakeBtn("BtnEnglish", langScreen.transform, "INGLÉS",
+            new Vector2(0, -70), new Vector2(440, 78),
+            NavyLight, Gold, 30f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangEnglish));
+
+        MakeBtn("BtnItalian", langScreen.transform, "ITALIANO",
+            new Vector2(0, -160), new Vector2(440, 78),
+            NavyLight, Gold, 30f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangItalian));
+
+        MakeLabel("LangNote", langScreen.transform,
+            "El juego está en español. Cambia el idioma que hablan\nlos personajes con los que investigas.",
+            new Vector2(0, -280), new Vector2(860, 70),
+            17f, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
+    }
+
+    void ChooseLanguage(string lang)
+    {
+        GameSettings.TargetLanguage = lang;
+        ApplyMenuLanguage();   // el menú de detrás ya estaba construido: hay que reescribirlo
+        langScreen.SetActive(false);
+    }
+
     void BuildUI()
     {
         var cvGO = new GameObject("MenuCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -123,9 +191,10 @@ public class MainMenuController : MonoBehaviour
         // llegado a Marsella; desde el 18/08/2026 el juego es exclusivamente
         // de resolver misterios y el jugador es un detective privado, así que
         // lo que se aprende hablando ya no es vivir, es investigar.
-        MakeLabel("Tagline", root, "Apprends le français en enquêtant",
+        MakeLabel("Tagline", root, "",   // lo rellena ApplyMenuLanguage
             new Vector2(0, titleY - 72), new Vector2(700, 36),
             20f, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
+        taglineTxt = root.Find("Tagline")?.GetComponent<TMP_Text>();
 
         // Bottom separator line
         MakeLine("LineBot", root, new Vector2(0, titleY - 104), new Vector2(460, 1.5f), GoldDim);
@@ -135,6 +204,12 @@ public class MainMenuController : MonoBehaviour
         // only the difficulty differs. No separate NIVEAUX button needed.
         float baseY = -400f; // portrait: buttons well below center
 
+        // Los rótulos van en el IDIOMA QUE SE APRENDE, no en español: era así
+        // desde siempre (el menú estaba en francés) y es parte de la
+        // ambientación. Lo que cambia es que ahora hay dos idiomas posibles.
+        //
+        // Reset y Quitar van más grandes que antes (18→22 y 16→20, con sus
+        // cajas ensanchadas): "Recommencer depuis le début" no se leía entero.
         MakeBtn("BtnAvance", root, "MODE AVANCÉ",
             new Vector2(0, baseY + 150), new Vector2(440, 78),
             Gold, BgDeep, 32f, FontStyles.Bold, PlayAdvanced, bordered: true);
@@ -144,12 +219,27 @@ public class MainMenuController : MonoBehaviour
             NavyLight, Gold, 28f, FontStyles.Bold, PlayBeginner);
 
         MakeBtn("BtnReset", root, "Recommencer depuis le début",
-            new Vector2(0, baseY - 22), new Vector2(380, 46),
-            Color.clear, CreamDim, 18f, FontStyles.Normal, ResetGame);
+            new Vector2(0, baseY - 22), new Vector2(480, 54),
+            Color.clear, CreamDim, 22f, FontStyles.Normal, ResetGame);
 
         MakeBtn("BtnQuit", root, "Quitter",
-            new Vector2(0, baseY - 90), new Vector2(220, 36),
-            Color.clear, CreamDim, 16f, FontStyles.Normal, QuitGame);
+            new Vector2(0, baseY - 96), new Vector2(260, 44),
+            Color.clear, CreamDim, 20f, FontStyles.Normal, QuitGame);
+
+        // El menú se construye en Awake, ANTES de que el jugador elija idioma
+        // en la primera pantalla — así que sus rótulos nacen con el idioma de
+        // la partida anterior. Se recogen aquí y se reescriben al elegir.
+        advanceBtnTxt  = root.Find("BtnAvance/Label")?.GetComponent<TMP_Text>();
+        debutantBtnTxt = root.Find("BtnDebutant/Label")?.GetComponent<TMP_Text>();
+        resetBtnTxt    = root.Find("BtnReset/Label")?.GetComponent<TMP_Text>();
+        quitBtnTxt     = root.Find("BtnQuit/Label")?.GetComponent<TMP_Text>();
+        ApplyMenuLanguage();
+
+        // ── Pantalla de elección de idioma ────────────────────────────────
+        // Va por delante del menú, a pantalla completa. Se construye al final
+        // para quedar la última en jerarquía y taparlo todo sin tocar
+        // sortingOrder.
+        BuildLanguageScreen(root);
 
         // ── Footer ────────────────────────────────────────────────────────
         var footer = new GameObject("Footer", typeof(RectTransform));

@@ -74,11 +74,11 @@ public class LevelResultUI : MonoBehaviour
 
         statusText.text  = success
             ? (level.detectiveMode
-                ? (es ? "Caso cerrado" : "Affaire classée")
-                : (es ? "¡Objetivo conseguido!" : "Objectif réussi !"))
+                ? (LangText.Pick("Caso cerrado", "Affaire classée", "Case closed", "Caso chiuso"))
+                : (LangText.Pick("¡Objetivo conseguido!", "Objectif réussi !", "Objective complete!", "Obiettivo raggiunto!")))
             : accusedWrong
-                ? (es ? "Acusaste a un inocente." : "Vous avez accusé un innocent.")
-                : (es ? "Se acabó el tiempo — inténtalo de nuevo." : "Temps écoulé — réessaie.");
+                ? (LangText.Pick("Acusaste a un inocente.", "Vous avez accusé un innocent.", "You accused an innocent person.", "Hai accusato un innocente."))
+                : (LangText.Pick("Se acabó el tiempo — inténtalo de nuevo.", "Temps écoulé — réessaie.", "Time is up — try again.", "Tempo scaduto — riprova."));
         statusText.color = success ? Gold : Fail;
 
         // El epílogo cierra la historia en los dos desenlaces: el bueno al
@@ -103,7 +103,7 @@ public class LevelResultUI : MonoBehaviour
         // faltaron), para que quede claro qué hacer mejor la próxima vez.
         int elapsedSec  = Mathf.FloorToInt(result.timeSeconds);
         int starSec     = Mathf.CeilToInt(level.starTimeSeconds);
-        int totalWords  = level.targetWords.Count;
+        int totalWords  = level.ActiveTargetWords.Count;
         int captured    = LevelManager.Instance != null ? LevelManager.Instance.CapturedTargetCount() : 0;
         int missing     = Mathf.Max(0, totalWords - captured);
 
@@ -113,22 +113,22 @@ public class LevelResultUI : MonoBehaviour
         bool detective = level.detectiveMode;
 
         objectiveLineText.text = starObjective
-            ? (detective ? (es ? "Caso resuelto" : "Affaire résolue")
-                         : (es ? "Objetivo conseguido" : "Objectif atteint"))
-            : (detective ? (es ? "El comisario no cerró el caso" : "Le commissaire n'a pas classé l'affaire")
-                         : (es ? "No conseguiste el objetivo a tiempo" : "Objectif non atteint à temps"));
+            ? (detective ? (LangText.Pick("Caso resuelto", "Affaire résolue", "Case solved", "Caso risolto"))
+                         : (LangText.Pick("Objetivo conseguido", "Objectif atteint", "Objective reached", "Obiettivo raggiunto")))
+            : (detective ? (LangText.Pick("El comisario no cerró el caso", "Le commissaire n'a pas classé l'affaire", "The inspector did not close the case", "Il commissario non ha chiuso il caso"))
+                         : (LangText.Pick("No conseguiste el objetivo a tiempo", "Objectif non atteint à temps", "Objective not reached in time", "Obiettivo non raggiunto in tempo")));
         objectiveLineText.color = starObjective ? LineOk : LineFail;
 
         if (detective)
         {
             wordsLineText.text = starWords
-                ? (es ? "Rompiste al mentiroso" : "Tu as fait craquer le menteur")
-                : (es ? "No llegaste a romper al mentiroso" : "Tu n'as pas fait craquer le menteur");
+                ? (LangText.Pick("Rompiste al mentiroso", "Tu as fait craquer le menteur", "You broke the liar", "Hai fatto crollare il bugiardo"))
+                : (LangText.Pick("No llegaste a romper al mentiroso", "Tu n'as pas fait craquer le menteur", "You did not break the liar", "Non hai fatto crollare il bugiardo"));
         }
         else
         {
             wordsLineText.text = starWords
-                ? (es ? $"Capturaste las {totalWords} palabras" : $"Tu as capturé les {totalWords} mots")
+                ? (LangText.Pick($"Capturaste las {totalWords} palabras", $"Tu as capturé les {totalWords} mots", $"You captured all {totalWords} words", $"Hai catturato tutte le {totalWords} parole"))
                 : (es ? $"Te faltaron {missing} palabra(s) ({captured}/{totalWords})"
                       : $"Il te manque {missing} mot(s) ({captured}/{totalWords})");
         }
@@ -148,14 +148,14 @@ public class LevelResultUI : MonoBehaviour
                 ? (starSpeed
                     ? (es ? $"Lo hiciste en {elapsedSec}s (menos de {starSec}s)" : $"Fait en {elapsedSec}s (moins de {starSec}s)")
                     : (es ? $"Tardaste {elapsedSec}s (necesitabas menos de {starSec}s)" : $"{elapsedSec}s (il fallait moins de {starSec}s)"))
-                : (es ? "No hubo estrella de velocidad — no llegaste a tiempo" : "Pas d'étoile de vitesse — temps écoulé");
+                : (LangText.Pick("No hubo estrella de velocidad — no llegaste a tiempo", "Pas d'étoile de vitesse — temps écoulé", "No speed star — you ran out of time", "Niente stella di velocità — tempo scaduto"));
         }
         speedLineText.color = starSpeed ? LineOk : LineFail;
 
         // Mismo aviso que la pista, una línea por muleta usada — para que
         // quede claro por qué se perdió cada estrella deducida.
-        string hintLine = hintUsed ? (es ? "Pista usada (-1 estrella)" : "Indice utilisé (-1 étoile)") : "";
-        string skipLine = skipPenalty ? (es ? "Saltos usados (-1 estrella)" : "Indices sautés (-1 étoile)") : "";
+        string hintLine = hintUsed ? (LangText.Pick("Pista usada (-1 estrella)", "Indice utilisé (-1 étoile)", "Hint used (-1 star)", "Indizio usato (-1 stella)")) : "";
+        string skipLine = skipPenalty ? (LangText.Pick("Saltos usados (-1 estrella)", "Indices sautés (-1 étoile)", "Skips used (-1 star)", "Salti usati (-1 stella)")) : "";
         hintText.text = string.Join("\n", new[] { hintLine, skipLine }.Where(s => !string.IsNullOrEmpty(s)));
 
         // Botón de siguiente nivel: solo si existe (1 estrella mínima
@@ -164,10 +164,10 @@ public class LevelResultUI : MonoBehaviour
         pendingNext = (result.stars >= 1) ? LevelDatabase.Get(level.id + 1) : null;
         nextBtnGO.SetActive(pendingNext != null);
         if (pendingNext != null)
-            nextBtnLabel.text = es ? "SIGUIENTE NIVEL >" : "NIVEAU SUIVANT >";
+            nextBtnLabel.text = LangText.Pick("SIGUIENTE NIVEL >", "NIVEAU SUIVANT >", "NEXT LEVEL >", "LIVELLO SUCCESSIVO >");
 
-        retryBtnLabel.text = es ? "REINTENTAR" : "RÉESSAYER";
-        menuBtnLabel.text  = es ? "Menú de niveles" : "Menu des niveaux";
+        retryBtnLabel.text = LangText.Pick("REINTENTAR", "RÉESSAYER", "RETRY", "RIPROVA");
+        menuBtnLabel.text  = LangText.Pick("Menú de niveles", "Menu des niveaux", "Level menu", "Menu dei livelli");
     }
 
     void Retry()

@@ -76,7 +76,11 @@ public abstract class DetectiveChatClient : MonoBehaviour
             && LevelManager.Instance.CurrentLevel?.npcObjectiveKeys != null
             && LevelManager.Instance.CurrentLevel.npcObjectiveKeys.TryGetValue(NpcId, out var key))
         {
-            levelObjective = key;
+            // El idioma que se aprende decide QUÉ expediente se pide, no otro
+            // nivel ni otra escena: "cased1_nadia" en francés, "cased1_nadia_en"
+            // en inglés. Es la misma Nadia, el mismo caso y la misma escena —
+            // solo cambia el idioma en el que habla.
+            levelObjective = key + GameSettings.DossierSuffix;
         }
 
         // Lo que el jugador YA lleva descubierto en el caso. Va en cada
