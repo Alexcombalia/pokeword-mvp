@@ -33,4 +33,20 @@ public class PiotrNPC : DetectiveNPC
 
     protected override string GreetingTranslationIt =>
         "Piotr. Joyero. Vengo a ayudar con las cosas de la señora.";
+
+    protected override string GreetingCa =>
+        "Piotr. Joier. Vinc a ajudar amb les coses de la senyora.";
+
+    protected override string GreetingTranslationCa =>
+        "Piotr. Joyero. Vengo a ayudar con las cosas de la señora.";
+
+    protected override string GreetingAgain   => "Encore une question ? Je vous en prie.";
+    protected override string GreetingAgainEn => "Another question? Please, go ahead.";
+    protected override string GreetingAgainIt => "Un'altra domanda? Prego.";
+    protected override string GreetingAgainCa => "Una altra pregunta? Endavant.";
+
+    protected override string GreetingAgainTranslation   => "¿Otra pregunta? Adelante.";
+    protected override string GreetingAgainTranslationEn => "¿Otra pregunta? Adelante.";
+    protected override string GreetingAgainTranslationIt => "¿Otra pregunta? Adelante.";
+    protected override string GreetingAgainTranslationCa => "¿Otra pregunta? Adelante.";
 }

@@ -26,6 +26,7 @@ public static class GameSettings
     public const string LangFrench  = "fr";
     public const string LangEnglish = "en";
     public const string LangItalian = "it";
+    public const string LangCatalan = "ca";
 
     public static string TargetLanguage
     {
@@ -35,6 +36,7 @@ public static class GameSettings
 
     public static bool IsEnglish => TargetLanguage == LangEnglish;
     public static bool IsItalian => TargetLanguage == LangItalian;
+    public static bool IsCatalan => TargetLanguage == LangCatalan;
 
     // Sufijo que se le añade a la clave de expediente para pedirle al
     // servidor la versión en este idioma: "cased1_nadia" en francés,
@@ -48,6 +50,17 @@ public static class GameSettings
         TargetLanguage == LangFrench ? "" : "_" + TargetLanguage;
 
     // Nombre del idioma para la interfaz, en español.
-    public static string TargetLanguageName =>
-        TargetLanguage == LangEnglish ? "inglés" : TargetLanguage == LangItalian ? "italiano" : "francés";
+    public static string TargetLanguageName
+    {
+        get
+        {
+            switch (TargetLanguage)
+            {
+                case LangEnglish: return "inglés";
+                case LangItalian: return "italiano";
+                case LangCatalan: return "catalán";
+                default:          return "francés";
+            }
+        }
+    }
 }

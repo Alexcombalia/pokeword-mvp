@@ -30,6 +30,10 @@ public class GuidedTutorial : MonoBehaviour
     Vector2    arrowBasePos;
     TMP_Text   skipTxt;
 
+    GameObject wordChip;        // la palabra de prueba que hay que tocar
+    TMP_Text   wordChipLabel;
+    bool       wordChipTapped;
+
     public bool IsRunning { get; private set; }
 
     // El botón "Saltar X" es compartido por las tres secuencias (RunSequence,
@@ -62,55 +66,120 @@ public class GuidedTutorial : MonoBehaviour
         // tras el SceneManager.LoadScene antes de mostrar nada encima.
         yield return new WaitForSecondsRealtime(0.6f);
 
-        bool es = GameSettings.IsBasic;
-        skipTxt.text = es ? "Saltar X" : "Passer X";
+        skipTxt.text = LangText.Pick("Saltar X", "Passer X", "Skip X", "Salta X", "Saltar X");
         SetVisible(true);
 
         // ── Paso 1 — moverse (joystick, abajo a la derecha) ──
         ShowStep(
-            es ? "Desliza aquí para moverte" : "Glisse ici pour te déplacer",
+            LangText.Pick("Desliza aquí para moverte", "Glisse ici pour te déplacer", "Slide here to move", "Scorri qui per muoverti", "Llisca aquí per moure't"),
             new Vector2(1f, 0f), new Vector2(-180, 480), new Vector2(380, 150),
             new Vector2(-180, 360), vertical: true);
         yield return WaitForMovement();
 
-        // ── Paso 2 — cuaderno de palabras (botón P, pos (140,420)) ──
+        // ── Paso 2 — capturar una palabra ──
+        //
+        // La palabra sale del propio nivel (`ActiveTargetWords[0]`), así que
+        // está en el idioma que se está aprendiendo y funciona en los cuatro
+        // sin escribir contenido nuevo.
+        //
+        // Y se captura DE VERDAD, no es una simulación: por eso el paso
+        // siguiente tiene sentido — al abrir el cuaderno hay algo dentro. Un
+        // cuaderno vacío no enseña qué es un cuaderno.
+        //
+        // Tiene que ser una palabra de mentira y no una del diálogo porque
+        // aquí todavía no se ha hablado con nadie: la conversación es el
+        // último paso del tutorial.
+        yield return ShowTapWordStep();
+
+        // ── Paso 3 — cuaderno de palabras (botón P, pos (140,420)) ──
         ShowStep(
-            es ? "Pulsa aquí para ver las palabras que ya capturaste" : "Appuie ici pour voir les mots que tu as déjà capturés",
+            LangText.Pick("Ahora pulsa aquí", "Maintenant, appuie ici", "Now tap here", "Ora tocca qui", "Ara toca aquí"),
             new Vector2(0f, 0f), new Vector2(320, 780), new Vector2(420, 150),
             new Vector2(140, 560), vertical: true);
         yield return WaitForPokeWorldOpen();
 
-        // ── Paso 3 — cerrar el cuaderno (botón X, en MobileControlsSetup: pos (-80,420)) ──
+        // Con el cuaderno ya abierto y la palabra dentro, se explica qué es.
+        // Antes esto se decía ANTES de abrirlo, hablando de una lista que el
+        // jugador todavía no había visto.
+        ShowCard(LangText.Pick(
+            "Aquí tienes las palabras que has capturado, con su traducción.\nVuelve cuando quieras: no se pierden.",
+            "Voici les mots que tu as capturés, avec leur traduction.\nReviens quand tu veux : ils ne se perdent pas.",
+            "Here are the words you have captured, with their translation.\nCome back whenever you like — they are not lost.",
+            "Ecco le parole che hai catturato, con la traduzione.\nTorna quando vuoi: non si perdono.",
+            "Aquí tens les paraules que has capturat, amb la traducció.\nTorna quan vulguis: no es perden."),
+            dim: false);
+        // Abajo del todo y sin velo: la lista está detrás y no se puede tapar
+        // ni atenuar — es lo que el jugador tiene que mirar.
+        cardGO.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -620);
+        yield return new WaitForSecondsRealtime(5f);
+
+        // ── Paso 4 — cerrar el cuaderno (botón X, en MobileControlsSetup: pos (-80,420)) ──
         ShowStep(
-            es ? "Pulsa aquí para cerrar el cuaderno de palabras" : "Appuie ici pour fermer le carnet de mots",
+            LangText.Pick("Pulsa aquí para cerrar el cuaderno de palabras", "Appuie ici pour fermer le carnet de mots", "Tap here to close the word notebook", "Tocca qui per chiudere il taccuino", "Toca aquí per tancar la llibreta de paraules"),
             new Vector2(1f, 0f), new Vector2(-260, 780), new Vector2(420, 150),
             new Vector2(-80, 560), vertical: true);
         yield return WaitForPokeWorldClose();
 
-        // ── Paso 4 — el botón de pista (LevelHUD, esquina inferior izquierda,
-        // pos (24,28) con pivote (0,0), o sea centro en (144,60)) ──
+        var lvl = LevelManager.Instance?.CurrentLevel;
+
+        // ── Paso 5 — cómo se puntúa ──
+        //
+        // Va ANTES del paso de la pista, que dice "te cuesta una estrella":
+        // esa frase no significa nada para quien todavía no sabe que hay
+        // estrellas ni cuántas. Y sin esto el jugador cree que las tres cosas
+        // del brief son obligatorias y que dejarse una es fallar el nivel.
+        ShowCard(LangText.Pick(
+            "Cada nivel se puede acabar con 1, 2 o 3 estrellas.\nLa primera es resolver el caso. Las otras dos son retos extra: puedes dejarlas pasar.",
+            "Chaque niveau peut se finir avec 1, 2 ou 3 étoiles.\nLa première, c'est résoudre l'affaire. Les deux autres sont des défis en plus : tu peux les laisser.",
+            "Every level can end with 1, 2 or 3 stars.\nThe first is solving the case. The other two are extra challenges — you can let them go.",
+            "Ogni livello può finire con 1, 2 o 3 stelle.\nLa prima è risolvere il caso. Le altre due sono sfide in più: puoi lasciarle perdere.",
+            "Cada nivell es pot acabar amb 1, 2 o 3 estrelles.\nLa primera és resoldre el cas. Les altres dues són reptes extra: les pots deixar passar."));
+        yield return new WaitForSecondsRealtime(6.5f);
+
+        // ── Paso 6 — el botón de pista (LevelHUD, esquina inferior
+        // izquierda: pos (24,28) con pivote (0,0), o sea centro en (144,60)) ──
         //
         // Solo si el nivel tiene pistas. Va ANTES de "hablar" porque ese paso
         // termina con el diálogo abierto tapando la pantalla, y ya no habría
         // dónde enseñar esto.
         //
-        // Este paso NO espera a que se pulse: usar una pista cuesta una
-        // estrella, y obligar al jugador a gastarla para pasar el tutorial
-        // sería cobrarle por aprender dónde está el botón. Se enseña, se dice
-        // lo que cuesta, y se sigue.
-        var lvl = LevelManager.Instance?.CurrentLevel;
+        // NO espera a que se pulse: usar una pista cuesta una estrella, y
+        // obligar al jugador a gastarla para pasar el tutorial sería cobrarle
+        // por aprender dónde está el botón.
         if (lvl != null && lvl.hintAvailable && lvl.hints != null && lvl.hints.Count > 0)
         {
             ShowStep(
-                es ? "¿Atascado? Aquí tienes una pista.\nTe cuesta una estrella." : "Bloqué ? Ici, un indice.\nÇa coûte une étoile.",
+                LangText.Pick("¿Atascado? Aquí tienes una pista.\nTe cuesta una estrella.",
+                              "Bloqué ? Ici, un indice.\nÇa coûte une étoile.",
+                              "Stuck? Here is a hint.\nIt costs you a star.",
+                              "Bloccato? Qui trovi un indizio.\nTi costa una stella.",
+                              "Encallat? Aquí tens una pista.\nEt costa una estrella."),
                 new Vector2(0f, 0f), new Vector2(330, 340), new Vector2(440, 170),
                 new Vector2(144, 150), vertical: true);
             yield return new WaitForSecondsRealtime(4.5f);
         }
 
-        // ── Paso 5 — hablar (botón E, en MobileControlsSetup: pos (140,260)) ──
+        // ── Paso 7 — cómo se cierra un caso ──
+        //
+        // El único paso que no señala un botón: explica una regla del juego,
+        // no la interfaz. Hace falta porque resolver el caso mentalmente no lo
+        // cierra — el agente no detiene a nadie hasta que le dan un nombre, y
+        // nada en pantalla dice que haya que ir a buscarle. Sin esto el
+        // jugador sabe quién fue y se queda dando vueltas por el salón.
+        if (lvl != null && lvl.detectiveMode)
+        {
+            ShowCard(LangText.Pick(
+                "Cuando sepas quién fue, busca al agente de policía y revélale lo que has descubierto.\nÉl hará la detención.",
+                "Quand tu sauras qui c'est, va voir l'agent de police et dis-lui ce que tu as découvert.\nC'est lui qui arrête.",
+                "When you know who did it, find the police officer and tell him what you found out.\nHe makes the arrest.",
+                "Quando saprai chi è stato, cerca l'agente di polizia e digli quello che hai scoperto.\nSarà lui ad arrestarlo.",
+                "Quan sàpigues qui va ser, busca l'agent de policia i revela-li el que has descobert.\nEll farà la detenció."));
+            yield return new WaitForSecondsRealtime(6f);
+        }
+
+        // ── Paso 8 — hablar (botón E, en MobileControlsSetup: pos (140,260)) ──
         ShowStep(
-            es ? "Acércate a alguien y pulsa aquí para hablar" : "Approche-toi de quelqu'un et appuie ici pour parler",
+            LangText.Pick("Acércate a alguien y pulsa aquí para hablar", "Approche-toi de quelqu'un et appuie ici pour parler", "Walk up to someone and tap here to talk", "Avvicinati a qualcuno e tocca qui per parlare", "Acosta't a algú i toca aquí per parlar"),
             new Vector2(0f, 0f), new Vector2(320, 580), new Vector2(420, 150),
             new Vector2(140, 380), vertical: true);
         yield return WaitForDialogueOpen();
@@ -136,14 +205,20 @@ public class GuidedTutorial : MonoBehaviour
     {
         IsRunning = true;
         runningBeginnerTurnSequence = true;
-        bool es = GameSettings.IsBasic;
-        skipTxt.text = es ? "Saltar X" : "Passer X";
+        skipTxt.text = LangText.Pick("Saltar X", "Passer X", "Skip X", "Salta X", "Saltar X");
         SetVisible(true);
 
+        // El idioma que se aprende va interpolado, no escrito: este mismo
+        // panel se usa para francés, inglés e italiano, y decía "en francés"
+        // en los tres.
+        string tgt = GameSettings.TargetLanguageName;
         ShowStep(
-            es
-                ? "Esta es la traducción de lo que dijiste. Algunas palabras clave pueden estar ocultas — ¡acuérdate de ellas! Graba tu voz diciéndola en francés."
-                : "Voici la traduction de ce que tu as dit. Certains mots clés peuvent être cachés — souviens-t'en ! Enregistre ta voix en le disant en français.",
+            LangText.Pick(
+                $"Esta es la traducción de lo que dijiste. Algunas palabras clave pueden estar ocultas — ¡acuérdate de ellas! Graba tu voz diciéndola en {tgt}.",
+                "Voici la traduction de ce que tu as dit. Certains mots clés peuvent être cachés — souviens-t'en ! Enregistre ta voix en le disant en français.",
+                "This is the translation of what you said. Some key words may be hidden — remember them! Record your voice saying it in English.",
+                "Questa è la traduzione di ciò che hai detto. Alcune parole chiave possono essere nascoste — ricordale! Registra la tua voce dicendola in italiano.",
+                "Aquesta és la traducció del que has dit. Algunes paraules clau poden estar amagades — recorda-les! Grava la teva veu dient-la en català."),
             new Vector2(0.5f, 0.5f), new Vector2(0, 380), new Vector2(560, 190),
             new Vector2(0, 100), vertical: true);
         // Espera solo a que EMPIECE a grabar, no a que termine el turno entero
@@ -216,12 +291,14 @@ public class GuidedTutorial : MonoBehaviour
             yield break;
         }
 
-        bool es = GameSettings.IsBasic;
-        skipTxt.text = es ? "Saltar X" : "Passer X";
+        skipTxt.text = LangText.Pick("Saltar X", "Passer X", "Skip X", "Salta X", "Saltar X");
         SetVisible(true);
-        cardText.text = es
-            ? "En este nivel puedes cambiar de zona — acércate al borde y pulsa E"
-            : "Dans ce niveau tu peux changer de zone — approche-toi du bord et appuie sur E";
+        cardText.text = LangText.Pick(
+            "En este nivel puedes cambiar de zona — acércate al borde y pulsa E",
+            "Dans ce niveau tu peux changer de zone — approche-toi du bord et appuie sur E",
+            "In this level you can change area — go to the edge and press E",
+            "In questo livello puoi cambiare zona — avvicinati al bordo e premi E",
+            "En aquest nivell pots canviar de zona — acosta't a la vora i prem E");
 
         var cardRT = cardGO.GetComponent<RectTransform>();
         cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
@@ -310,6 +387,7 @@ public class GuidedTutorial : MonoBehaviour
     void FinishSequence()
     {
         StopAllCoroutines();
+        if (wordChip != null) wordChip.SetActive(false);
         SetVisible(false);
         IsRunning = false;
         PlayerPrefs.SetInt("guided_tutorial_done", 1);
@@ -325,6 +403,7 @@ public class GuidedTutorial : MonoBehaviour
 
     void ShowStep(string text, Vector2 anchor, Vector2 cardPos, Vector2 cardSize, Vector2 arrowPos, bool vertical)
     {
+        if (dimGO != null) dimGO.SetActive(true);   // por si el paso anterior lo quitó
         cardText.text = text;
 
         var cardRT = cardGO.GetComponent<RectTransform>();
@@ -345,6 +424,79 @@ public class GuidedTutorial : MonoBehaviour
 
         StopCoroutine(nameof(BounceArrow));
         StartCoroutine(nameof(BounceArrow));
+    }
+
+    // ── Palabra de prueba ────────────────────────────────────────────────
+    //
+    // Enseña la mecánica de capturar tocando una palabra, que es la única que
+    // el jugador no descubre solo: las demás (moverse, hablar, el cuaderno)
+    // tienen un botón visible, y esta no — son palabras dentro de una frase.
+    //
+    // Espera al toque de verdad, como el resto de pasos del tutorial: no
+    // avanza por tiempo.
+    IEnumerator ShowTapWordStep()
+    {
+        var lvl   = LevelManager.Instance?.CurrentLevel;
+        var words = lvl?.ActiveTargetWords;
+        if (words == null || words.Count == 0) yield break;   // nivel sin vocabulario: se salta
+
+        string target  = words[0].french;    // "french" es el nombre viejo del campo: es el idioma OBJETIVO
+        string spanish = words[0].spanish;
+
+        ShowCard(LangText.Pick(
+            "Las palabras en dorado se pueden capturar.\nToca esta para probar:",
+            "Les mots en doré peuvent être capturés.\nTouche celui-ci pour essayer :",
+            "Words in gold can be captured.\nTap this one to try:",
+            "Le parole in oro si possono catturare.\nTocca questa per provare:",
+            "Les paraules en daurat es poden capturar.\nToca aquesta per provar:"));
+
+        wordChip.SetActive(true);
+        wordChipLabel.text = target;
+        wordChipTapped = false;
+
+        // La flecha señala la palabra, no un botón de la interfaz.
+        arrowRT.anchorMin = arrowRT.anchorMax = new Vector2(0.5f, 0.5f);
+        arrowRT.pivot     = new Vector2(0.5f, 0.5f);
+        arrowGlyph.text   = "↓";
+        arrowBasePos      = new Vector2(0, -60);
+        StopCoroutine(nameof(BounceArrow));
+        StartCoroutine(nameof(BounceArrow));
+
+        while (!wordChipTapped) yield return null;
+
+        // Captura real: entra en el cuaderno y sale la tarjeta de traducción
+        // de siempre, la misma que verá en el juego.
+        FindObjectOfType<WordSystem>()?.Capture(target, spanish);
+
+        wordChip.SetActive(false);
+
+        // La tarjeta de traducción se dibuja en 410 y el tutorial en 470, así
+        // que quedaría detrás del velo. Se aparta el tutorial entero mientras
+        // se ve: es la recompensa del paso y tiene que verse limpia.
+        SetVisible(false);
+        yield return new WaitForSecondsRealtime(2.4f);
+        SetVisible(true);
+    }
+
+    // Paso sin flecha, para lo que no está en ningún botón. La tarjeta va al
+    // centro y el glifo se vacía: dejar la flecha apuntando a una esquina
+    // cualquiera haría creer que allí hay algo que pulsar.
+    // dim=false deja ver lo que hay DEBAJO sin atenuar. Hace falta para el
+    // paso del cuaderno: decir "aquí están tus palabras" mientras la lista se
+    // ve apagada al 55% es justo lo contrario de lo que se quiere.
+    void ShowCard(string text, bool dim = true)
+    {
+        if (dimGO != null) dimGO.SetActive(dim);
+        cardText.text = text;
+
+        var cardRT = cardGO.GetComponent<RectTransform>();
+        cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cardRT.pivot     = new Vector2(0.5f, 0.5f);
+        cardRT.anchoredPosition = new Vector2(0, 120);
+        cardRT.sizeDelta = new Vector2(640, 240);
+
+        StopCoroutine(nameof(BounceArrow));
+        arrowGlyph.text = "";
     }
 
     IEnumerator BounceArrow()
@@ -430,6 +582,38 @@ public class GuidedTutorial : MonoBehaviour
         arrowGlyph.alignment = TextAlignmentOptions.Center;
         arrowGlyph.fontStyle = FontStyles.Bold;
         arrowGlyph.raycastTarget = false;
+
+        // Palabra de prueba, en el centro y bajo la tarjeta. Se pinta con los
+        // mismos colores que una palabra capturable del diálogo para que el
+        // jugador reconozca el patrón después, dentro del juego.
+        wordChip = new GameObject("WordChip", typeof(RectTransform), typeof(Image));
+        wordChip.transform.SetParent(root.transform, false);
+        var chipRT = wordChip.GetComponent<RectTransform>();
+        chipRT.anchorMin = chipRT.anchorMax = new Vector2(0.5f, 0.5f);
+        chipRT.pivot     = new Vector2(0.5f, 0.5f);
+        chipRT.anchoredPosition = new Vector2(0, -160);
+        chipRT.sizeDelta = new Vector2(420, 110);
+        var chipImg = wordChip.GetComponent<Image>();
+        chipImg.sprite = RoundedRectSprite.GetSprite();
+        chipImg.type   = Image.Type.Sliced;
+        chipImg.color  = new Color(0.051f, 0.122f, 0.208f, 0.98f);
+
+        var chipLblGO = new GameObject("Label", typeof(RectTransform));
+        chipLblGO.transform.SetParent(wordChip.transform, false);
+        var clRT = chipLblGO.GetComponent<RectTransform>();
+        clRT.anchorMin = Vector2.zero; clRT.anchorMax = Vector2.one;
+        clRT.offsetMin = Vector2.zero; clRT.offsetMax = Vector2.zero;
+        wordChipLabel = chipLblGO.AddComponent<TextMeshProUGUI>();
+        wordChipLabel.fontSize  = 44;
+        wordChipLabel.color     = Gold;
+        wordChipLabel.alignment = TextAlignmentOptions.Center;
+        wordChipLabel.fontStyle = FontStyles.Bold;
+        wordChipLabel.raycastTarget = false;
+
+        var chipBtn = wordChip.AddComponent<Button>();
+        chipBtn.targetGraphic = chipImg;
+        chipBtn.onClick.AddListener(() => wordChipTapped = true);
+        wordChip.SetActive(false);
 
         // Skip button — top-right, always available, never traps the player
         var skipGO = new GameObject("Skip", typeof(RectTransform), typeof(Image));

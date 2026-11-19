@@ -33,4 +33,15 @@ public class MarcelNPC : DetectiveNPC
 
     protected override string GreetingTranslationIt =>
         "Marcel Charrier. Un antiguo del cuerpo. Si puedo ayudarle, de policía a policía.";
+
+    protected override string GreetingCa =>
+        "Marcel Charrier. Un de la vella guàrdia. Si el puc ajudar, de policia a policia.";
+
+    protected override string GreetingTranslationCa =>
+        "Marcel Charrier. Un antiguo del cuerpo. Si puedo ayudarle, de policía a policía.";
+
+    protected override string GreetingAgain   => "Je vous écoute.";
+    protected override string GreetingAgainEn => "I'm listening.";
+    protected override string GreetingAgainIt => "La ascolto.";
+    protected override string GreetingAgainCa => "L'escolto.";
 }

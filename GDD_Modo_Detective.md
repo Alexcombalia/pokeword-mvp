@@ -1,4 +1,4 @@
-# Pokeword — GDD del Modo Detective (modo avanzado)
+# Lingua Noir — GDD del Modo Detective (modo avanzado)
 
 **Versión:** 1.0 — 11/08/2026
 **Estado:** diseño cerrado a falta de las decisiones abiertas del final. **Nada de esto está programado todavía.**
@@ -8,7 +8,7 @@
 
 ## 1. Qué es el modo detective
 
-El modo avanzado de Pokeword deja de ser "una campaña más difícil" y pasa a ser un **juego de misterio**. El jugador llega a Marsella en 1941 como **detective** y resuelve 5 casos. Toda la mecánica es **hablar y escuchar a NPCs**: no hay combate, ni inventario, ni minijuegos.
+El modo avanzado de Lingua Noir deja de ser "una campaña más difícil" y pasa a ser un **juego de misterio**. El jugador es **inspector de policía** en la Marsella de 1941 y resuelve 5 casos que le van cayendo por turno — nadie le contrata y nadie le paga, así que ningún caso depende de que haya un cliente que lo encargue. Toda la mecánica es **hablar y escuchar a NPCs**: no hay combate, ni inventario, ni minijuegos.
 
 La pieza nueva de diseño: **algunos NPCs mienten**. El jugador tiene que averiguar qué es verdad, quién miente y por qué. Se resuelve un caso cruzando lo que dice uno con lo que dice otro — es decir, **hablando más**.
 
@@ -276,6 +276,22 @@ Marsella, 1941. El detective llega buscando trabajo y acaba encadenando casos pe
 **Resolución con Fabre:** hacen falta **3 testimonios** (`temoin_*`) + `francois_cornered`. Fabre pide que el jugador se los resuma **uno por uno, en francés** — es deliberadamente el momento de producción oral más largo del juego, y llega cuando el jugador ya lleva 4 casos hablando.
 
 **Vocabulario objetivo:** repaso de los 4 casos + `témoignage` (testimonio), `dénoncer` (denunciar), `dette` (deuda), `menace` (amenaza), `justice`.
+
+---
+
+## 2.7 Multilingüe — el juego ya no es solo de francés
+
+Desde el 18/08/2026 el jugador elige **qué idioma quiere aprender** al abrir el juego. A 24/08/2026 hay cuatro: **francés, inglés, italiano y catalán**. Lo que cambia es lo que hablan los NPCs; **la interfaz sigue en español** en modo débutant. Por eso la pregunta de la primera pantalla es «¿qué idioma quieres aprender?» y no «¿en qué idioma quieres jugar?».
+
+**La regla que sostiene todo:** el idioma **no viaja en su propio campo**. Va como **sufijo de la clave de expediente** que el cliente manda al servidor: `cased1_nadia` es francés, `cased1_nadia_en` inglés, `_it` italiano, `_ca` catalán. El servidor lo deduce con `langOf()`. Así una clave no puede quedar descolgada de su idioma — un expediente italiano interpretado con reglas francesas sería un fallo silencioso y caro.
+
+**Los cinco puntos del servidor que dependen del idioma** (todos tablas indexadas por código, añadir uno es añadir una fila): etiquetado de vocabulario (`TAGGING_EXAMPLES`), reglas del modo básico (`basicInstructionFor`), guía fonética del JSON de respuesta (`PHONETIC`), voces TTS (`TTS_VOICES`, sufijo `_xx`) y reconocimiento de voz (`STT_LANGUAGE_CODES`).
+
+**En el cliente** manda `LangText.Pick(es, fr, en, it, ca)`: **en débutant gana siempre el español**, en avancé gana el idioma que se aprende, y si falta una traducción cae al francés. `GameSettings.TargetLanguage` guarda la elección y `DossierSuffix` la convierte en sufijo por convención, no por tabla.
+
+**El error que se repitió en los tres idiomas nuevos** y que hay que buscar el primero al añadir otro: cadenas de idioma escritas a fuego fuera de este sistema. El saludo de entrada de cada NPC (vive en el cliente, se muestra antes de la primera llamada al servidor), el `languageCode` del TTS, el idioma de `/translate`, el de STT, y textos españoles que *nombran* el francés («AHORA LÉELO EN FRANCÉS») — este último se escapa de cualquier búsqueda de texto francés.
+
+**Aviso sobre el catalán:** Google TTS tiene **una sola voz catalana**, `ca-ES-Standard-B`, y es femenina (comprobado con `GET /voices`). Los cuatro personajes de una escena comparten timbre y se separan con **tono y velocidad**. Se descartó usar voces `es-ES`: suenan a castellanohablante leyendo catalán, y en un juego para aprender el idioma enseñar mal la pronunciación es peor defecto que la falta de variedad.
 
 ---
 

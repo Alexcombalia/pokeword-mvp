@@ -32,4 +32,15 @@ public class FabreNPC : DetectiveNPC
 
     protected override string GreetingTranslationIt =>
         "Un robo que salió mal. Pasa, en este barrio.";
+
+    protected override string GreetingCa =>
+        "Un [robatori|robo] que va acabar malament. Passa, en aquest [barri|barrio].";
+
+    protected override string GreetingTranslationCa =>
+        "Un robo que salió mal. Pasa, en este barrio.";
+
+    protected override string GreetingAgain   => "Vous avez quelque chose ?";
+    protected override string GreetingAgainEn => "Do you have something?";
+    protected override string GreetingAgainIt => "Ha qualcosa?";
+    protected override string GreetingAgainCa => "Té alguna cosa?";
 }

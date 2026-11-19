@@ -54,6 +54,23 @@ public class LevelHUD : MonoBehaviour
     // cuando el texto cambia de verdad, no en cada frame.
     string lastFittedText;
 
+    // ─── DÓNDE TERMINA EL PERGAMINO DE OBJETIVOS ─────────────────────────
+    //
+    // Y negativa desde el borde superior de la pantalla. La leen los botones
+    // flotantes de la derecha (silenciar música, profesor) para colocarse por
+    // debajo.
+    //
+    // Hace falta porque el panel NO tiene un alto fijo: crece con cada hallazgo
+    // descubierto y, desde que la letra es más grande (16/09/2026), bastante
+    // más. Con una posición fija, los botones acababan tapados a mitad de caso.
+    //
+    // Fuera de un nivel vale 0: en el menú no hay pergamino y los botones se
+    // quedan donde los pusieron.
+    float bannerBottom;
+    public static float BannerBottomY =>
+        (Instance != null && Instance.root != null && Instance.root.activeSelf)
+            ? Instance.bannerBottom : 0f;
+
     LevelDefinition builtForLevel;
 
     void Awake()
@@ -119,24 +136,32 @@ public class LevelHUD : MonoBehaviour
                     : hasCheckpoints ? BuildCheckpointText(lm) : lm.CurrentLevel.DisplaySummary;
             }
 
-            if (detective)
+            // Mismo criterio que la pantalla de resultado: la 2ª estrella solo
+            // es la del careo si el nivel declara secondStarCheckpoint.
+            if (detective && !string.IsNullOrEmpty(lm.CurrentLevel.secondStarCheckpoint))
             {
-                int starMins = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds / 60f);
+                string starTime = TimeText.Threshold(lm.CurrentLevel.starTimeSeconds);
                 starsLineText.text = es
-                    ? LangText.Pick($"Resuelto  ·  El mentiroso  ·  menos de {starMins} min",
-                                    $"Résolu  ·  Le menteur  ·  moins de {starMins} min",
-                                    $"Solved  ·  The liar  ·  under {starMins} min",
-                                    $"Risolto  ·  Il bugiardo  ·  meno di {starMins} min") : null;
+                    ? LangText.Pick($"Resuelto  ·  El mentiroso  ·  menos de {starTime}",
+                                    $"Résolu  ·  Le menteur  ·  moins de {starTime}",
+                                    $"Solved  ·  The liar  ·  under {starTime}",
+                                    $"Risolto  ·  Il bugiardo  ·  meno di {starTime}",
+                                    $"Resolt  ·  El mentider  ·  menys de {starTime}") : null;
             }
             else
             {
-                int wordCount = lm.CurrentLevel.ActiveTargetWords.Count;
-                int starSecs  = Mathf.CeilToInt(lm.CurrentLevel.starTimeSeconds);
+                // La 2ª estrella de los casos débutant dejó de ser vocabulario
+                // y pasó a ser habla (30/08/2026): el HUD tiene que prometer lo
+                // mismo que la pantalla de resultado va a puntuar.
+                int spoken      = lm.WordsSpoken;
+                int target      = lm.CurrentLevel.spokenWordsTarget;
+                string starTime = TimeText.Threshold(lm.CurrentLevel.starTimeSeconds);
                 starsLineText.text = es
-                    ? LangText.Pick($"Objetivo  ·  {wordCount} palabras  ·  menos de {starSecs}s",
-                                    $"Objectif  ·  {wordCount} mots  ·  moins de {starSecs}s",
-                                    $"Objective  ·  {wordCount} words  ·  under {starSecs}s",
-                                    $"Obiettivo  ·  {wordCount} parole  ·  meno di {starSecs}s") : null;
+                    ? LangText.Pick($"Objetivo  ·  hablar {spoken}/{target}  ·  menos de {starTime}",
+                                    $"Objectif  ·  parler {spoken}/{target}  ·  moins de {starTime}",
+                                    $"Objective  ·  speak {spoken}/{target}  ·  under {starTime}",
+                                    $"Obiettivo  ·  parlare {spoken}/{target}  ·  meno di {starTime}",
+                                    $"Objectiu  ·  parlar {spoken}/{target}  ·  menys de {starTime}") : null;
             }
 
             // El caso empieza con cuatro objetivos y va sumando hallazgos, así
@@ -167,10 +192,11 @@ public class LevelHUD : MonoBehaviour
         float textH = objectiveText.GetPreferredValues(objectiveText.text, width, 0f).y;
         otRT.sizeDelta = new Vector2(-40, textH);
 
-        // 8 arriba + 12 de aire + 38 de la línea de estrellas (10 de margen
-        // inferior + 28 de alto), los mismos valores con los que se construyó.
-        float bannerH = Mathf.Clamp(textH + 58f, 120f, 900f);
+        // 8 arriba + 12 de aire + 46 de la línea de estrellas (10 de margen
+        // inferior + 36 de alto), los mismos valores con los que se construyó.
+        float bannerH = Mathf.Clamp(textH + 66f, 130f, 900f);
         ResizePanel(objBg, new Vector2(960, bannerH), 6f);
+        bannerBottom = -(20f + bannerH);
 
         // Mismas separaciones que en el diseño original (el panel medía 150 y
         // el reloj estaba 15 por debajo, el de palabras 95), pero calculadas
@@ -251,7 +277,7 @@ public class LevelHUD : MonoBehaviour
                 if (first)
                 {
                     sb.Append("\n\n<color=" + CapturedGreenHex + ">");
-                    sb.Append(LangText.Pick("Lo que sabes:", "Ce que tu sais :", "What you know:", "Quello che sai:"));
+                    sb.Append(LangText.Pick("Lo que sabes:", "Ce que tu sais :", "What you know:", "Quello che sai:", "El que saps:"));
                     sb.Append("</color>");
                     first = false;
                 }
@@ -286,7 +312,20 @@ public class LevelHUD : MonoBehaviour
     {
         builtForLevel = def;
         ApplyLayoutFor(def);
-        headerTxt.text = LangText.Pick("Palabras a encontrar", "Mots à trouver", "Words to find", "Parole da trovare");
+
+        // El panel de "palabras a encontrar" queda OCULTO desde el 02/09/2026.
+        // Capturar vocabulario dejó de ser objetivo y dejó de dar estrella (la
+        // 2ª es ahora de habla, ver LevelDefinition.spokenWordsTarget), así que
+        // enseñar una lista de palabras pendientes prometía un reto que ya no
+        // existe — y ocupaba la mejor esquina de la pantalla.
+        //
+        // Se oculta en vez de borrarse: el sistema de captura sigue vivo (el
+        // cuaderno, la tarjeta de traducción, el tutorial) y el panel podría
+        // volver como opcional. SetPanelVisible se lleva también el marco de
+        // tinta, que es un hermano y no un hijo — apagar solo el panel dejaría
+        // el recuadro flotando vacío.
+        SetPanelVisible(wordPanel, false);
+        headerTxt.text = LangText.Pick("Palabras a encontrar", "Mots à trouver", "Words to find", "Parole da trovare", "Paraules a trobar");
         foreach (Transform child in entriesContainer.transform) Destroy(child.gameObject);
         wordEntries.Clear();
 
@@ -325,14 +364,14 @@ public class LevelHUD : MonoBehaviour
         float panelWidth = GameSettings.IsBasic ? 400f : 300f;
         panelRT.sizeDelta = new Vector2(panelWidth, Mathf.Max(110f, -y + 56f));
 
-        // Panel's own anchoredPosition.y is -265 (pivot top-right); place the
-        // coachmark just below its dynamic bottom edge.
-        float panelBottomY = -265f - panelRT.sizeDelta.y;
-        CoachMarks.Instance?.ShowOnce("word_panel",
-            GameSettings.IsBasic
-                ? "Estas palabras van a salir en la conversación.\n¡Tócalas para capturarlas!"
-                : "Ces mots vont apparaître dans la conversation.\nTouche-les pour les capturer !",
-            new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-16, panelBottomY - 10f), new Vector2(280, 100));
+        // El aviso "estas palabras van a salir en la conversación, ¡tócalas!"
+        // se retiró el 02/09/2026, junto con el panel al que señalaba: apuntaba
+        // a un recuadro que ya no se dibuja, y salía flotando bajo el botón del
+        // profesor sin nada debajo.
+        //
+        // Lo que explicaba lo enseña ahora el tutorial guiado, y mejor: con una
+        // palabra de prueba que el jugador toca de verdad (GuidedTutorial,
+        // paso 2), en vez de un cartel que se lee y se olvida.
     }
 
     void BuildCanvas()
@@ -373,14 +412,16 @@ public class LevelHUD : MonoBehaviour
         otRT.anchoredPosition = new Vector2(0, -8);
         otRT.sizeDelta = new Vector2(-40, 100);
         objectiveText = objTxtGO.AddComponent<TextMeshProUGUI>();
-        objectiveText.fontSize  = 26;
+        objectiveText.fontSize  = 32;
         objectiveText.color     = InkBrown;
         objectiveText.alignment = TextAlignmentOptions.Center;
         objectiveText.fontStyle = FontStyles.Bold;
         objectiveText.enableWordWrapping = true;
         objectiveText.enableAutoSizing = true;
-        objectiveText.fontSizeMin = 19;
-        objectiveText.fontSizeMax = 27;
+        // El MÍNIMO es lo que de verdad manda: con el texto largo, TMP encoge
+        // hasta ahí y ese era el cuerpo que se leía en la práctica.
+        objectiveText.fontSizeMin = 25;
+        objectiveText.fontSizeMax = 34;
 
         // Segunda línea, siempre visible: qué necesitas para cada una de
         // las 3 estrellas — la duda explícita de "cómo sé si lo hago mejor
@@ -391,9 +432,9 @@ public class LevelHUD : MonoBehaviour
         slRT.anchorMin = new Vector2(0f, 0f); slRT.anchorMax = new Vector2(1f, 0f);
         slRT.pivot     = new Vector2(0.5f, 0f);
         slRT.anchoredPosition = new Vector2(0, 10);
-        slRT.sizeDelta = new Vector2(-40, 28);
+        slRT.sizeDelta = new Vector2(-40, 36);
         starsLineText = starsLineGO.AddComponent<TextMeshProUGUI>();
-        starsLineText.fontSize  = 19;
+        starsLineText.fontSize  = 24;
         starsLineText.color     = InkBrown;
         starsLineText.alignment = TextAlignmentOptions.Center;
         starsLineText.fontStyle = FontStyles.Italic;
@@ -416,7 +457,7 @@ public class LevelHUD : MonoBehaviour
         ttRT.anchorMin = Vector2.zero; ttRT.anchorMax = Vector2.one;
         ttRT.offsetMin = Vector2.zero; ttRT.offsetMax = Vector2.zero;
         timerText = timerGO.AddComponent<TextMeshProUGUI>();
-        timerText.fontSize  = 38;
+        timerText.fontSize  = 46;
         timerText.color     = GoldInk;
         timerText.alignment = TextAlignmentOptions.Center;
         timerText.fontStyle = FontStyles.Bold;
@@ -484,13 +525,13 @@ public class LevelHUD : MonoBehaviour
         hptRT.anchorMin = Vector2.zero; hptRT.anchorMax = Vector2.one;
         hptRT.offsetMin = new Vector2(18, 12); hptRT.offsetMax = new Vector2(-18, -12);
         hintPanelText = hpTxtGO.AddComponent<TextMeshProUGUI>();
-        hintPanelText.fontSize  = 24;
+        hintPanelText.fontSize  = 29;
         hintPanelText.color     = InkBrown;
         hintPanelText.alignment = TextAlignmentOptions.Center;
         hintPanelText.enableWordWrapping = true;
         hintPanelText.enableAutoSizing = true;
-        hintPanelText.fontSizeMin = 17;
-        hintPanelText.fontSizeMax = 24;
+        hintPanelText.fontSizeMin = 22;
+        hintPanelText.fontSizeMax = 29;
 
         // Tocar el panel lo cierra — sin botón de cerrar, que en un móvil
         // sería un objetivo más pequeño que el propio panel.
@@ -516,7 +557,7 @@ public class LevelHUD : MonoBehaviour
         hbtRT.anchorMin = Vector2.zero; hbtRT.anchorMax = Vector2.one;
         hbtRT.offsetMin = Vector2.zero; hbtRT.offsetMax = Vector2.zero;
         hintBtnLabel = hbTxtGO.AddComponent<TextMeshProUGUI>();
-        hintBtnLabel.fontSize  = 22;
+        hintBtnLabel.fontSize  = 26;
         hintBtnLabel.color     = InkBrown;
         hintBtnLabel.alignment = TextAlignmentOptions.Center;
         hintBtnLabel.fontStyle = FontStyles.Bold;
@@ -570,8 +611,8 @@ public class LevelHUD : MonoBehaviour
         if (hintBtnLabel == null) return;
         bool es = GameSettings.IsBasic;
         hintBtnLabel.text = lm != null && lm.HintUsed
-            ? (LangText.Pick("Pista", "Indice", "Hint", "Indizio"))
-            : (LangText.Pick("Pista  (-1 estrella)", "Indice  (-1 étoile)", "Hint  (-1 star)", "Indizio  (-1 stella)"));
+            ? (LangText.Pick("Pista", "Indice", "Hint", "Indizio", "Pista"))
+            : (LangText.Pick("Pista  (-1 estrella)", "Indice  (-1 étoile)", "Hint  (-1 star)", "Indizio  (-1 stella)", "Pista  (-1 estrella)"));
     }
 
     // El HUD se construye una vez con la forma de un nivel débutant (una línea
@@ -589,9 +630,9 @@ public class LevelHUD : MonoBehaviour
         // un cuerpo ilegible.
         objectiveText.alignment        = detective ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
         objectiveText.enableAutoSizing = !detective;
-        if (detective) objectiveText.fontSize = 22;
-        objectiveText.fontSizeMin = 19;
-        objectiveText.fontSizeMax = 27;
+        if (detective) objectiveText.fontSize = 28;
+        objectiveText.fontSizeMin = 25;
+        objectiveText.fontSizeMax = 34;
 
         lastFittedText = null; // fuerza recalcular el alto al entrar al nivel
 
@@ -605,6 +646,7 @@ public class LevelHUD : MonoBehaviour
             objectiveText.GetComponent<RectTransform>().sizeDelta = new Vector2(-40, 100);
             MovePanel(timerBg,   new Vector2(0,   -185));
             MovePanel(wordPanel, new Vector2(-16, -265));
+            bannerBottom = -170f;
         }
 
         bool showHint = def != null && def.hintAvailable && def.hints != null && def.hints.Count > 0;

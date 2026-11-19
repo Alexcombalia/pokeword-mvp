@@ -111,7 +111,7 @@ public class DialogueSystem : MonoBehaviour
                 // El texto de ayuda del campo vive en el prefab GlobalUI y estaba
                 // fijo en francés ("Écris ici..."). Se sobrescribe aquí porque un
                 // prefab no puede saber en qué idioma se está jugando.
-                placeholderTxt.text = LangText.Pick("Escribe aquí...", "Écris ici...", "Write here...", "Scrivi qui...");
+                placeholderTxt.text = LangText.Pick("Escribe aquí...", "Écris ici...", "Write here...", "Scrivi qui...", "Escriu aquí...");
             }
         }
 
@@ -263,6 +263,8 @@ public class DialogueSystem : MonoBehaviour
 
         if (!voiceRecorder.IsRecording)
         {
+            // Callar al NPC antes de abrir el micro (ver NPCVoicePlayer.Silence).
+            NPCVoicePlayer.Instance?.Silence();
             // UI updates via OnRecordingStarted event once recording actually begins
             voiceRecorder.StartRecording();
         }
@@ -273,6 +275,18 @@ public class DialogueSystem : MonoBehaviour
             voiceRecorder.StopAndTranscribe(
                 onResult: text =>
                 {
+                    // Repetición de habla en modo avancé. Aquí el jugador habla
+                    // directamente en el idioma objetivo, así que lo que cuenta
+                    // es lo transcrito.
+                    //
+                    // En débutant este mismo micrófono se usa para hablar en
+                    // ESPAÑOL (la frase se traduce y luego se lee en voz alta),
+                    // y eso no es repetición del idioma que se aprende: la
+                    // cuenta la lleva BeginnerTurnController al aceptar la
+                    // lectura. Por eso el guardia de IsBasic.
+                    if (!GameSettings.IsBasic)
+                        LevelManager.Instance?.ReportSpoken(text, Time.time - recordStartTime);
+
                     if (dialogueInput != null)
                     {
                         dialogueInput.text = text;
@@ -498,7 +512,7 @@ public class DialogueSystem : MonoBehaviour
         if (resp == null || !resp.ok || string.IsNullOrEmpty(resp.translation)) yield break;
 
         pendingPlayerTranslation = resp.translation;
-        chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io"), msg, pendingPlayerTranslation);
+        chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io", "Jo"), msg, pendingPlayerTranslation);
         RefreshChatDisplay();
 
         // Este endpoint ligero vuelve en ~1s (frente a los ~3-4s de la respuesta
@@ -526,7 +540,7 @@ public class DialogueSystem : MonoBehaviour
 
         int seq = ++chatMessageSeq;
         pendingPlayerTranslation = null;
-        chatPlayerLine = LangText.Pick("Yo", "Toi", "Me", "Io") + ": " + msg;
+        chatPlayerLine = LangText.Pick("Yo", "Toi", "Me", "Io", "Jo") + ": " + msg;
 
         // Fires in parallel with the NPC call below — much smaller prompt, returns
         // in ~1s instead of ~3-4s, so the player sees their own translation right
@@ -572,7 +586,9 @@ public class DialogueSystem : MonoBehaviour
                         SpeechCaptionUI.Instance?.ShowNpcLine(genericDisplayName, processedReply, HandleLinkClicked);
                         SpeechCaptionUI.Instance?.ShowTranslation(GameSettings.IsBasic ? replyTranslation : null);
                         SpeechCaptionUI.Instance?.SetPlayerTranslation(GameSettings.IsBasic ? playerMessageTranslation : null, HandleLinkClicked);
-                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64);
+                        // `reply` y no `processedReply`: el segundo lleva ya
+                        // las etiquetas de color/enlace de TMP metidas.
+                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64, reply);
 
                         // Retos que ESTE NPC reporta como alcanzados — se
                         // suman al set del nivel (LevelManager), que puede
@@ -646,7 +662,7 @@ public class DialogueSystem : MonoBehaviour
                         SpeechCaptionUI.Instance?.ShowNpcLine(detectiveDisplayName, processed, HandleLinkClicked);
                         SpeechCaptionUI.Instance?.ShowTranslation(GameSettings.IsBasic ? replyTranslation : null);
                         SpeechCaptionUI.Instance?.SetPlayerTranslation(GameSettings.IsBasic ? playerMessageTranslation : null, HandleLinkClicked);
-                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64);
+                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64, reply);
 
                         // Los hallazgos del caso. LevelManager une lo que
                         // reportan todos los NPCs; el panel verde del HUD se
@@ -660,11 +676,17 @@ public class DialogueSystem : MonoBehaviour
                     if (GameSettings.IsBasic && LevelManager.Instance != null && LevelManager.Instance.IsActive
                         && !string.IsNullOrEmpty(playerMessageTranslation))
                     {
-                        BeginnerTurnController.Instance?.RunTurn(playerMessageTranslation, playerMessagePhonetic, capturableFromPhrase =>
-                        {
-                            foreach (var kvp in capturableFromPhrase) currentCapturable[kvp.Key] = kvp.Value;
-                            Reveal();
-                        });
+                        var cancelledClient = detectiveClient;   // capturado: puede cambiar antes del callback
+                        BeginnerTurnController.Instance?.RunTurn(playerMessageTranslation, playerMessagePhonetic,
+                            capturableFromPhrase =>
+                            {
+                                foreach (var kvp in capturableFromPhrase) currentCapturable[kvp.Key] = kvp.Value;
+                                Reveal();
+                            },
+                            // Descartar el turno: además de no revelar la respuesta,
+                            // se le pide al NPC que olvide el intercambio, o
+                            // recordaría algo que para el jugador nunca se dijo.
+                            () => { if (cancelledClient != null) StartCoroutine(cancelledClient.UndoLastExchange()); });
                     }
                     else
                     {
@@ -700,7 +722,7 @@ public class DialogueSystem : MonoBehaviour
                         SpeechCaptionUI.Instance?.ShowNpcLine("Jacques", processed, HandleLinkClicked);
                         SpeechCaptionUI.Instance?.ShowTranslation(GameSettings.IsBasic ? replyTranslation : null);
                         SpeechCaptionUI.Instance?.SetPlayerTranslation(GameSettings.IsBasic ? playerMessageTranslation : null, HandleLinkClicked);
-                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64);
+                        NPCVoicePlayer.Instance?.PlayVoice(audioBase64, reply);
                         if (objectiveComplete) LevelManager.Instance?.ReportObjectiveComplete();
                     }
 
@@ -750,7 +772,7 @@ public class DialogueSystem : MonoBehaviour
                         currentCapturable[kvp.Key] = kvp.Value;
                     }
 
-                    chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io"), msg, pendingPlayerTranslation ?? playerMessageTranslation);
+                    chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io", "Jo"), msg, pendingPlayerTranslation ?? playerMessageTranslation);
                     chatNpcLine    = FormatLine("Henry", processedReply, replyTranslation);
                     RefreshChatDisplay();
                 },
@@ -807,7 +829,7 @@ public class DialogueSystem : MonoBehaviour
                         extra = "\n\n[Boutique] Tu n'as pas assez d'argent.";
                 }
 
-                chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io"), msg, pendingPlayerTranslation ?? playerMessageTranslation);
+                chatPlayerLine = FormatLine(LangText.Pick("Yo", "Toi", "Me", "Io", "Jo"), msg, pendingPlayerTranslation ?? playerMessageTranslation);
                 chatNpcLine    = FormatLine("Boulanger", processedReply, replyTranslation) + extra;
                 RefreshChatDisplay();
             },
@@ -1257,32 +1279,37 @@ public class DialogueSystem : MonoBehaviour
 
         currentCapturable.Clear();
 
-        // Se borra la memoria de conversación del personaje, no su progreso:
-        // los checkpoints ya ganados los guarda LevelManager. Así el jugador
-        // puede volver a hablar con el mismo testigo las veces que haga falta
-        // —regla de accesibilidad del caso— sin arrastrar un hilo de charla
-        // cada vez más largo ni perder lo que ya descubrió.
-        StartCoroutine(client.ResetMemory(() =>
-        {
-            var processed = DynamicWordHighlighter.ProcessText(greeting, out var capturable);
-            currentCapturable.Clear();
-            foreach (var kvp in capturable) currentCapturable[kvp.Key] = kvp.Value;
-            SpeechCaptionUI.Instance?.ShowNpcLine(displayName, processed, HandleLinkClicked);
+        // NO se borra la memoria del personaje al reabrir la conversación.
+        //
+        // Antes sí: cada vez que el jugador volvía a hablar con alguien, ese
+        // alguien había olvidado todo lo dicho. Se podía acorralar a un testigo,
+        // salir, entrar otra vez y ser recibido como un desconocido. El progreso
+        // nunca se perdía —los hallazgos los guarda LevelManager y se reenvían—
+        // pero la sensación era la de rellenar un formulario, no la de
+        // interrogar a una persona, que es sobre lo que se sostiene el juego
+        // entero.
+        //
+        // El hilo no crece sin fin: el servidor recorta a los últimos 16
+        // mensajes por personaje (ver detectiveSessions en server.js). El coste
+        // es un prompt algo más largo por turno, y se paga a gusto.
+        var processed = DynamicWordHighlighter.ProcessText(greeting, out var capturable);
+        currentCapturable.Clear();
+        foreach (var kvp in capturable) currentCapturable[kvp.Key] = kvp.Value;
+        SpeechCaptionUI.Instance?.ShowNpcLine(displayName, processed, HandleLinkClicked);
 
-            if (GameSettings.IsBasic && !string.IsNullOrEmpty(greetingTranslation))
-                SpeechCaptionUI.Instance?.ShowTranslation(greetingTranslation);
+        if (GameSettings.IsBasic && !string.IsNullOrEmpty(greetingTranslation))
+            SpeechCaptionUI.Instance?.ShowTranslation(greetingTranslation);
 
-            // La frase de entrada se muestra desde el cliente, así que no venía
-            // con audio: era la única línea del juego que se leía y no se oía,
-            // en cualquier idioma. Se pide aparte con la voz del personaje.
-            if (greetingTTS == null) greetingTTS = gameObject.AddComponent<PhraseTTSClient>();
-            string greetingVoice = client.NpcId + GameSettings.DossierSuffix;   // "", "_en" o "_it"
-            StartCoroutine(greetingTTS.FetchAudio(
-                greeting,   // el servidor ya quita las etiquetas [fr|es] antes de sintetizar
-                audio => NPCVoicePlayer.Instance?.PlayVoice(audio),
-                _ => { },   // sin voz se sigue jugando: el texto ya está en pantalla
-                greetingVoice));
-        }));
+        // La frase de entrada se muestra desde el cliente, así que no venía
+        // con audio: era la única línea del juego que se leía y no se oía,
+        // en cualquier idioma. Se pide aparte con la voz del personaje.
+        if (greetingTTS == null) greetingTTS = gameObject.AddComponent<PhraseTTSClient>();
+        string greetingVoice = client.NpcId + GameSettings.DossierSuffix;   // "", "_en", "_it" o "_ca"
+        StartCoroutine(greetingTTS.FetchAudio(
+            greeting,   // el servidor ya quita las etiquetas [fr|es] antes de sintetizar
+            audio => NPCVoicePlayer.Instance?.PlayVoice(audio, greeting),
+            _ => { },   // sin voz se sigue jugando: el texto ya está en pantalla
+            greetingVoice));
     }
 
     public void OpenPoliceChallenge(string challengeLine, System.Action<string> onAnswer, System.Action onTimeout)

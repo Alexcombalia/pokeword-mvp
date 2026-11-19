@@ -135,10 +135,26 @@ public abstract class DetectiveChatClient : MonoBehaviour
         }
     }
 
-    // Se llama al abrir la conversación. Importante en modo detective: si el
-    // jugador vuelve a hablar con el mismo NPC a mitad de caso, el personaje
-    // arranca limpio pero los checkpoints YA ganados no se pierden — esos los
-    // guarda LevelManager, no el servidor.
+    // Tira el último intercambio en el servidor — el botón de descartar del
+    // turno de lectura (ver BeginnerTurnController.CancelTurn). Sin esto el NPC
+    // recordaría un mensaje que el jugador dio por no dicho.
+    public IEnumerator UndoLastExchange()
+    {
+        var reqObj = new ResetRequest { sessionId = NpcId };
+        string json = JsonUtility.ToJson(reqObj);
+        using (var request = new UnityWebRequest(serverBase + "/npc/" + NpcId + "/undo", "POST"))
+        {
+            request.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            yield return request.SendWebRequest();   // si falla, se sigue jugando
+        }
+    }
+
+    // Borra la conversación entera. Se llama UNA vez por carga de escena (ver
+    // DetectiveNPC.Start), no al reabrir el diálogo: dentro de una partida el
+    // personaje tiene que recordar lo que se le ha dicho. Los checkpoints no se
+    // pierden — esos los guarda LevelManager, no el servidor.
     public IEnumerator ResetMemory(System.Action onDone = null, System.Action<string> onError = null)
     {
         var reqObj = new ResetRequest { sessionId = NpcId };

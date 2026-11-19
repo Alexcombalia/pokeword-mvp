@@ -30,6 +30,7 @@ public class LevelResultUI : MonoBehaviour
     TMP_Text   wordsLineText;
     TMP_Text   speedLineText;
     TMP_Text   hintText;
+    TMP_Text   repsText;   // repeticiones de habla y escucha
     GameObject epiloguePanel;   // carta de cierre del caso, antes de las estrellas
     TMP_Text   epilogueText;
     GameObject nextBtnGO;
@@ -74,11 +75,11 @@ public class LevelResultUI : MonoBehaviour
 
         statusText.text  = success
             ? (level.detectiveMode
-                ? (LangText.Pick("Caso cerrado", "Affaire classée", "Case closed", "Caso chiuso"))
-                : (LangText.Pick("¡Objetivo conseguido!", "Objectif réussi !", "Objective complete!", "Obiettivo raggiunto!")))
+                ? (LangText.Pick("Caso cerrado", "Affaire classée", "Case closed", "Caso chiuso", "Cas tancat"))
+                : (LangText.Pick("¡Objetivo conseguido!", "Objectif réussi !", "Objective complete!", "Obiettivo raggiunto!", "Objectiu aconseguit!")))
             : accusedWrong
-                ? (LangText.Pick("Acusaste a un inocente.", "Vous avez accusé un innocent.", "You accused an innocent person.", "Hai accusato un innocente."))
-                : (LangText.Pick("Se acabó el tiempo — inténtalo de nuevo.", "Temps écoulé — réessaie.", "Time is up — try again.", "Tempo scaduto — riprova."));
+                ? (LangText.Pick("Acusaste a un inocente.", "Vous avez accusé un innocent.", "You accused an innocent person.", "Hai accusato un innocente.", "Has acusat un innocent."))
+                : (LangText.Pick("Se acabó el tiempo — inténtalo de nuevo.", "Temps écoulé — réessaie.", "Time is up — try again.", "Tempo scaduto — riprova.", "S'ha acabat el temps — torna-ho a provar."));
         statusText.color = success ? Gold : Fail;
 
         // El epílogo cierra la historia en los dos desenlaces: el bueno al
@@ -101,11 +102,19 @@ public class LevelResultUI : MonoBehaviour
         // Por qué se ganó o no cada estrella, en concreto — no solo el
         // icono relleno/vacío, sino la razón (tiempo exacto, palabras que
         // faltaron), para que quede claro qué hacer mejor la próxima vez.
-        int elapsedSec  = Mathf.FloorToInt(result.timeSeconds);
-        int starSec     = Mathf.CeilToInt(level.starTimeSeconds);
-        int totalWords  = level.ActiveTargetWords.Count;
-        int captured    = LevelManager.Instance != null ? LevelManager.Instance.CapturedTargetCount() : 0;
-        int missing     = Mathf.Max(0, totalWords - captured);
+        string elapsedTime = TimeText.Elapsed(result.timeSeconds);
+        string starTime    = TimeText.Threshold(level.starTimeSeconds);
+
+        // Las repeticiones de habla y escucha. Desde el 30/08/2026 el objetivo
+        // del juego no es aprender el idioma sino entrenar listening y
+        // speaking, y esto es lo que mide esa afirmación — el único número que
+        // el jugador no consigue en ninguna otra app.
+        var lm = LevelManager.Instance;
+        int spokenWords = lm != null ? lm.WordsSpoken : 0;
+        int heardWords  = lm != null ? lm.WordsHeard  : 0;
+        string spokenTime = TimeText.Elapsed(lm != null ? lm.SecondsSpoken : 0f);
+        string heardTime  = TimeText.Elapsed(lm != null ? lm.SecondsHeard  : 0f);
+        string lng = GameSettings.TargetLanguageName;
 
         // En modo detective las tres estrellas significan otra cosa: resolver
         // el caso, romper al mentiroso y el cronómetro. Y nunca se pierde por
@@ -113,49 +122,84 @@ public class LevelResultUI : MonoBehaviour
         bool detective = level.detectiveMode;
 
         objectiveLineText.text = starObjective
-            ? (detective ? (LangText.Pick("Caso resuelto", "Affaire résolue", "Case solved", "Caso risolto"))
-                         : (LangText.Pick("Objetivo conseguido", "Objectif atteint", "Objective reached", "Obiettivo raggiunto")))
-            : (detective ? (LangText.Pick("El comisario no cerró el caso", "Le commissaire n'a pas classé l'affaire", "The inspector did not close the case", "Il commissario non ha chiuso il caso"))
-                         : (LangText.Pick("No conseguiste el objetivo a tiempo", "Objectif non atteint à temps", "Objective not reached in time", "Obiettivo non raggiunto in tempo")));
+            ? (detective ? (LangText.Pick("Caso resuelto", "Affaire résolue", "Case solved", "Caso risolto", "Cas resolt"))
+                         : (LangText.Pick("Objetivo conseguido", "Objectif atteint", "Objective reached", "Obiettivo raggiunto", "Objectiu aconseguit")))
+            : (detective ? (LangText.Pick("El comisario no cerró el caso", "Le commissaire n'a pas classé l'affaire", "The inspector did not close the case", "Il commissario non ha chiuso il caso", "El comissari no va tancar el cas"))
+                         : (LangText.Pick("No conseguiste el objetivo a tiempo", "Objectif non atteint à temps", "Objective not reached in time", "Obiettivo non raggiunto in tempo", "No has aconseguit l'objectiu a temps")));
         objectiveLineText.color = starObjective ? LineOk : LineFail;
 
-        if (detective)
+        // La 2ª estrella NO es siempre la del careo: solo lo es en los niveles
+        // que declaran un secondStarCheckpoint (los avanzados). En los casos
+        // débutant sigue siendo la de vocabulario.
+        //
+        // Bastaba con estar en modo detective para enseñar el texto del
+        // mentiroso, así que un jugador del caso débutant que había hecho
+        // confesar a Piotr leía "no llegaste a romper al mentiroso" y perdía la
+        // estrella por otra razón — la pantalla le mentía sobre su propia
+        // partida, que es de los fallos que peor sientan.
+        if (detective && !string.IsNullOrEmpty(level.secondStarCheckpoint))
         {
             wordsLineText.text = starWords
-                ? (LangText.Pick("Rompiste al mentiroso", "Tu as fait craquer le menteur", "You broke the liar", "Hai fatto crollare il bugiardo"))
-                : (LangText.Pick("No llegaste a romper al mentiroso", "Tu n'as pas fait craquer le menteur", "You did not break the liar", "Non hai fatto crollare il bugiardo"));
+                ? (LangText.Pick("Rompiste al mentiroso", "Tu as fait craquer le menteur", "You broke the liar", "Hai fatto crollare il bugiardo", "Has fet caure el mentider"))
+                : (LangText.Pick("No llegaste a romper al mentiroso", "Tu n'as pas fait craquer le menteur", "You did not break the liar", "Non hai fatto crollare il bugiardo", "No has arribat a fer caure el mentider"));
         }
         else
         {
+            // 2ª estrella de HABLA (sustituye a la de vocabulario, 30/08/2026).
+            int target = level.spokenWordsTarget;
             wordsLineText.text = starWords
-                ? (LangText.Pick($"Capturaste las {totalWords} palabras", $"Tu as capturé les {totalWords} mots", $"You captured all {totalWords} words", $"Hai catturato tutte le {totalWords} parole"))
-                : (es ? $"Te faltaron {missing} palabra(s) ({captured}/{totalWords})"
-                      : $"Il te manque {missing} mot(s) ({captured}/{totalWords})");
+                ? LangText.Pick($"Hablaste {spokenWords} palabras en voz alta",
+                                $"Tu as dit {spokenWords} mots à voix haute",
+                                $"You spoke {spokenWords} words out loud",
+                                $"Hai detto {spokenWords} parole ad alta voce",
+                                $"Vas dir {spokenWords} paraules en veu alta")
+                : LangText.Pick($"Hablaste {spokenWords} palabras (hacían falta {target})",
+                                $"Tu as dit {spokenWords} mots (il en fallait {target})",
+                                $"You spoke {spokenWords} words (you needed {target})",
+                                $"Hai detto {spokenWords} parole (ne servivano {target})",
+                                $"Vas dir {spokenWords} paraules (en calien {target})");
         }
         wordsLineText.color = starWords ? LineOk : LineFail;
 
         if (detective)
         {
-            int elapsedMin = Mathf.FloorToInt(result.timeSeconds / 60f);
-            int starMin    = Mathf.CeilToInt(level.starTimeSeconds / 60f);
             speedLineText.text = starSpeed
-                ? (es ? $"Resuelto en {elapsedMin} min (menos de {starMin})" : $"Résolu en {elapsedMin} min (moins de {starMin})")
-                : (es ? $"Tardaste {elapsedMin} min (necesitabas menos de {starMin})" : $"{elapsedMin} min (il fallait moins de {starMin})");
+                ? LangText.Pick($"Resuelto en {elapsedTime} (menos de {starTime})", $"Résolu en {elapsedTime} (moins de {starTime})",
+                                $"Solved in {elapsedTime} (under {starTime})",      $"Risolto in {elapsedTime} (meno di {starTime})",
+                                $"Resolt en {elapsedTime} (menys de {starTime})")
+                : LangText.Pick($"Tardaste {elapsedTime} (necesitabas menos de {starTime})", $"{elapsedTime} (il fallait moins de {starTime})",
+                                $"You took {elapsedTime} (you needed under {starTime})",     $"Ci hai messo {elapsedTime} (serviva meno di {starTime})");
         }
         else
         {
             speedLineText.text = success
                 ? (starSpeed
-                    ? (es ? $"Lo hiciste en {elapsedSec}s (menos de {starSec}s)" : $"Fait en {elapsedSec}s (moins de {starSec}s)")
-                    : (es ? $"Tardaste {elapsedSec}s (necesitabas menos de {starSec}s)" : $"{elapsedSec}s (il fallait moins de {starSec}s)"))
-                : (LangText.Pick("No hubo estrella de velocidad — no llegaste a tiempo", "Pas d'étoile de vitesse — temps écoulé", "No speed star — you ran out of time", "Niente stella di velocità — tempo scaduto"));
+                    ? LangText.Pick($"Lo hiciste en {elapsedTime} (menos de {starTime})", $"Fait en {elapsedTime} (moins de {starTime})",
+                                    $"Done in {elapsedTime} (under {starTime})",          $"Fatto in {elapsedTime} (meno di {starTime})",
+                                    $"Fet en {elapsedTime} (menys de {starTime})")
+                    : LangText.Pick($"Tardaste {elapsedTime} (necesitabas menos de {starTime})", $"{elapsedTime} (il fallait moins de {starTime})",
+                                    $"You took {elapsedTime} (you needed under {starTime})",     $"Ci hai messo {elapsedTime} (serviva meno di {starTime})"))
+                : (LangText.Pick("No hubo estrella de velocidad — no llegaste a tiempo", "Pas d'étoile de vitesse — temps écoulé", "No speed star — you ran out of time", "Niente stella di velocità — tempo scaduto", "No hi ha estrella de velocitat — no has arribat a temps"));
         }
         speedLineText.color = starSpeed ? LineOk : LineFail;
 
         // Mismo aviso que la pista, una línea por muleta usada — para que
         // quede claro por qué se perdió cada estrella deducida.
-        string hintLine = hintUsed ? (LangText.Pick("Pista usada (-1 estrella)", "Indice utilisé (-1 étoile)", "Hint used (-1 star)", "Indizio usato (-1 stella)")) : "";
-        string skipLine = skipPenalty ? (LangText.Pick("Saltos usados (-1 estrella)", "Indices sautés (-1 étoile)", "Skips used (-1 star)", "Salti usati (-1 stella)")) : "";
+        repsText.text =
+            LangText.Pick($"Has hablado {spokenWords} palabras en {lng}  ·  {spokenTime}",
+                          $"Tu as dit {spokenWords} mots  ·  {spokenTime}",
+                          $"You spoke {spokenWords} words  ·  {spokenTime}",
+                          $"Hai detto {spokenWords} parole  ·  {spokenTime}",
+                          $"Has dit {spokenWords} paraules  ·  {spokenTime}")
+            + "\n" +
+            LangText.Pick($"Has escuchado {heardWords} palabras  ·  {heardTime}",
+                          $"Tu en as écouté {heardWords}  ·  {heardTime}",
+                          $"You listened to {heardWords} words  ·  {heardTime}",
+                          $"Ne hai ascoltate {heardWords}  ·  {heardTime}",
+                          $"N'has escoltat {heardWords}  ·  {heardTime}");
+
+        string hintLine = hintUsed ? (LangText.Pick("Pista usada (-1 estrella)", "Indice utilisé (-1 étoile)", "Hint used (-1 star)", "Indizio usato (-1 stella)", "Pista usada (-1 estrella)")) : "";
+        string skipLine = skipPenalty ? (LangText.Pick("Saltos usados (-1 estrella)", "Indices sautés (-1 étoile)", "Skips used (-1 star)", "Salti usati (-1 stella)", "Salts usats (-1 estrella)")) : "";
         hintText.text = string.Join("\n", new[] { hintLine, skipLine }.Where(s => !string.IsNullOrEmpty(s)));
 
         // Botón de siguiente nivel: solo si existe (1 estrella mínima
@@ -164,10 +208,10 @@ public class LevelResultUI : MonoBehaviour
         pendingNext = (result.stars >= 1) ? LevelDatabase.Get(level.id + 1) : null;
         nextBtnGO.SetActive(pendingNext != null);
         if (pendingNext != null)
-            nextBtnLabel.text = LangText.Pick("SIGUIENTE NIVEL >", "NIVEAU SUIVANT >", "NEXT LEVEL >", "LIVELLO SUCCESSIVO >");
+            nextBtnLabel.text = LangText.Pick("SIGUIENTE NIVEL >", "NIVEAU SUIVANT >", "NEXT LEVEL >", "LIVELLO SUCCESSIVO >", "NIVELL SEGÜENT >");
 
-        retryBtnLabel.text = LangText.Pick("REINTENTAR", "RÉESSAYER", "RETRY", "RIPROVA");
-        menuBtnLabel.text  = LangText.Pick("Menú de niveles", "Menu des niveaux", "Level menu", "Menu dei livelli");
+        retryBtnLabel.text = LangText.Pick("REINTENTAR", "RÉESSAYER", "RETRY", "RIPROVA", "TORNAR-HO A PROVAR");
+        menuBtnLabel.text  = LangText.Pick("Menú de niveles", "Menu des niveaux", "Level menu", "Menu dei livelli", "Menú de nivells");
     }
 
     void Retry()
@@ -223,7 +267,7 @@ public class LevelResultUI : MonoBehaviour
         cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
         cardRT.pivot     = new Vector2(0.5f, 0.5f);
         cardRT.anchoredPosition = Vector2.zero;
-        cardRT.sizeDelta = new Vector2(600, 780);
+        cardRT.sizeDelta = new Vector2(600, 900);   // +120: hueco para el bloque de repeticiones
         card.GetComponent<Image>().color = NavyMid;
 
         titleText = MakeLabel(card.transform, "Title", "", new Vector2(0, 330), new Vector2(520, 70),
@@ -260,6 +304,28 @@ public class LevelResultUI : MonoBehaviour
         hintText   = MakeLabel(card.transform, "Hint", "", new Vector2(0, -6), new Vector2(520, 32),
                                 18, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
 
+        // ── Repeticiones de habla y escucha ──
+        // Separado de las tres líneas de estrella y con su propio recuadro: no
+        // es una condición que se gane o se pierda, es LO QUE HAS HECHO. Es el
+        // número que sostiene la tesis del juego (entrenar speaking y
+        // listening) y el que se le enseña a un evaluador.
+        var repsBg = new GameObject("RepsBg", typeof(RectTransform), typeof(Image));
+        repsBg.transform.SetParent(card.transform, false);
+        var rbRT = repsBg.GetComponent<RectTransform>();
+        rbRT.anchorMin = rbRT.anchorMax = new Vector2(0.5f, 0.5f);
+        rbRT.pivot     = new Vector2(0.5f, 0.5f);
+        rbRT.anchoredPosition = new Vector2(0, -68);
+        rbRT.sizeDelta = new Vector2(540, 88);
+        var rbImg = repsBg.GetComponent<Image>();
+        rbImg.sprite = RoundedRectSprite.GetSprite();
+        rbImg.type   = Image.Type.Sliced;
+        rbImg.color  = new Color(0.051f, 0.122f, 0.208f, 1f);
+        rbImg.raycastTarget = false;
+
+        repsText = MakeLabel(repsBg.transform, "RepsText", "", Vector2.zero, new Vector2(520, 88),
+                              20, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
+        repsText.lineSpacing = 8f;
+
         // ── Carta de cierre del caso ──
         // Va por delante de la tarjeta de resultado, a pantalla completa, en
         // vez de meterse dentro: la tarjeta ya va justa de sitio, y un caso de
@@ -281,16 +347,16 @@ public class LevelResultUI : MonoBehaviour
                 Gold, TextDark, 25, FontStyles.Bold, () => epiloguePanel.SetActive(false));
         epiloguePanel.SetActive(false);
 
-        nextBtnGO = MakeBtn(card.transform, "BtnNext", "NIVEAU SUIVANT >", new Vector2(0, -90), new Vector2(420, 68),
+        nextBtnGO = MakeBtn(card.transform, "BtnNext", "NIVEAU SUIVANT >", new Vector2(0, -165), new Vector2(420, 68),
                 Gold, TextDark, 25, FontStyles.Bold, NextLevel);
         nextBtnLabel = nextBtnGO.GetComponentInChildren<TMP_Text>();
         nextBtnGO.SetActive(false);
 
-        var retryBtnGO = MakeBtn(card.transform, "BtnRetry", "RÉESSAYER", new Vector2(0, -180), new Vector2(400, 62),
+        var retryBtnGO = MakeBtn(card.transform, "BtnRetry", "RÉESSAYER", new Vector2(0, -255), new Vector2(400, 62),
                 new Color(0.051f, 0.122f, 0.208f, 1f), Gold, 25, FontStyles.Bold, Retry);
         retryBtnLabel = retryBtnGO.GetComponentInChildren<TMP_Text>();
 
-        var menuBtnGO = MakeBtn(card.transform, "BtnMenu", "Menu des niveaux", new Vector2(0, -260), new Vector2(360, 54),
+        var menuBtnGO = MakeBtn(card.transform, "BtnMenu", "Menu des niveaux", new Vector2(0, -335), new Vector2(360, 54),
                 Color.clear, CreamDim, 21, FontStyles.Normal, BackToMenu);
         menuBtnLabel = menuBtnGO.GetComponentInChildren<TMP_Text>();
     }

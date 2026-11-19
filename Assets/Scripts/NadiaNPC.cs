@@ -17,20 +17,36 @@ public class NadiaNPC : DetectiveNPC
     public override string DisplayName => "Nadia";
 
     public override string Greeting =>
-        "Merci d'être venu. Le [docteur|médico] dit : le cœur. Moi, je ne le crois pas.";
+        "Merci d'être venu. Le [docteur|médico] croit à une crise cardiaque. Moi, je n'y crois pas.";
 
     protected override string GreetingTranslation =>
-        "Gracias por venir. El médico dice: el corazón. Yo no me lo creo.";
+        "Gracias por venir. El médico cree que fue un infarto. Yo no me lo creo.";
 
     protected override string GreetingEn =>
-        "Thank you for coming. The [doctor|médico] says: her heart. I don't believe it.";
+        "Thank you for coming. The [doctor|médico] thinks it was a heart attack. I don't believe it.";
 
     protected override string GreetingTranslationEn =>
-        "Gracias por venir. El médico dice: el corazón. Yo no me lo creo.";
+        "Gracias por venir. El médico cree que fue un infarto. Yo no me lo creo.";
 
     protected override string GreetingIt =>
-        "Grazie di essere venuto. Il [dottore|médico] dice: il cuore. Io non ci credo.";
+        "Grazie di essere venuto. Il [dottore|médico] crede a un infarto. Io non ci credo.";
 
     protected override string GreetingTranslationIt =>
-        "Gracias por venir. El médico dice: el corazón. Yo no me lo creo.";
+        "Gracias por venir. El médico cree que fue un infarto. Yo no me lo creo.";
+
+    protected override string GreetingCa =>
+        "Gràcies per venir. El [metge|médico] creu que va ser un infart. Jo no m'ho crec.";
+
+    protected override string GreetingTranslationCa =>
+        "Gracias por venir. El médico cree que fue un infarto. Yo no me lo creo.";
+
+    protected override string GreetingAgain   => "Oui, monsieur ?";
+    protected override string GreetingAgainEn => "Yes, sir?";
+    protected override string GreetingAgainIt => "Sì, signore?";
+    protected override string GreetingAgainCa => "Sí, senyor?";
+
+    protected override string GreetingAgainTranslation   => "¿Sí, señor?";
+    protected override string GreetingAgainTranslationEn => "¿Sí, señor?";
+    protected override string GreetingAgainTranslationIt => "¿Sí, señor?";
+    protected override string GreetingAgainTranslationCa => "¿Sí, señor?";
 }

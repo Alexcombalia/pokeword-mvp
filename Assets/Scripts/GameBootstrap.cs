@@ -177,6 +177,33 @@ public class GameBootstrap : MonoBehaviour
             DontDestroyOnLoad(scu);
         }
 
+        // El profesor — botón flotante + chat de dudas de idioma. Va en su
+        // propio canvas (460) para poder abrirse ENCIMA de una conversación,
+        // que es cuando de verdad hace falta preguntar qué acaban de decir.
+        if (TeacherChatClient.Instance == null)
+        {
+            var tc = new GameObject("TeacherChatClient");
+            tc.AddComponent<TeacherChatClient>();
+            DontDestroyOnLoad(tc);
+        }
+
+        if (TeacherPanel.Instance == null)
+        {
+            var tp = new GameObject("TeacherPanel");
+            tp.AddComponent<TeacherPanel>();
+            DontDestroyOnLoad(tp);
+        }
+
+        // Silenciar la música — overlay propio para que esté en el menú y en
+        // partida sin duplicarlo por escena. Hay gente que no juega con música
+        // y no tenía forma de quitarla.
+        if (MusicToggleButton.Instance == null)
+        {
+            var mt = new GameObject("MusicToggleButton");
+            mt.AddComponent<MusicToggleButton>();
+            DontDestroyOnLoad(mt);
+        }
+
         // BeginnerTurnController — persistent overlay, gate de "léelo/dilo en
         // francés" del modo débutant (ver DialogueSystem.SendChatMessage)
         if (BeginnerTurnController.Instance == null)

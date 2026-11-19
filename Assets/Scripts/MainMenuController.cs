@@ -92,13 +92,14 @@ public class MainMenuController : MonoBehaviour
         // Mismo criterio que el resto del juego: LangText.Pick decide, y aquí
         // el primer argumento (español) no se usa nunca — el menú va siempre en
         // el idioma que se aprende. Se pasa igual para no inventar otra regla.
-        string P(string fr, string en, string it) => GameSettings.IsItalian ? it : GameSettings.IsEnglish ? en : fr;
+        string P(string fr, string en, string it, string ca) =>
+            GameSettings.IsCatalan ? ca : GameSettings.IsItalian ? it : GameSettings.IsEnglish ? en : fr;
 
-        if (taglineTxt      != null) taglineTxt.text      = P("Apprends le français en enquêtant", "Aprende inglés investigando", "Aprende italiano investigando");
-        if (advanceBtnTxt   != null) advanceBtnTxt.text   = P("MODE AVANCÉ",   "ADVANCED MODE", "MODO AVANZATO");
-        if (debutantBtnTxt  != null) debutantBtnTxt.text  = P("MODE DÉBUTANT", "BEGINNER MODE", "MODO PRINCIPIANTE");
-        if (resetBtnTxt     != null) resetBtnTxt.text     = P("Recommencer depuis le début", "Start from the beginning", "Ricomincia da capo");
-        if (quitBtnTxt      != null) quitBtnTxt.text      = P("Quitter", "Quit", "Esci");
+        if (taglineTxt      != null) taglineTxt.text      = P("Apprends le français en enquêtant", "Aprende inglés investigando", "Aprende italiano investigando", "Aprèn català investigant");
+        if (advanceBtnTxt   != null) advanceBtnTxt.text   = P("MODE AVANCÉ",   "ADVANCED MODE", "MODO AVANZATO", "MODE AVANÇAT");
+        if (debutantBtnTxt  != null) debutantBtnTxt.text  = P("MODE DÉBUTANT", "BEGINNER MODE", "MODO PRINCIPIANTE", "MODE PRINCIPIANT");
+        if (resetBtnTxt     != null) resetBtnTxt.text     = P("Recommencer depuis le début", "Start from the beginning", "Ricomincia da capo", "Tornar a començar");
+        if (quitBtnTxt      != null) quitBtnTxt.text      = P("Quitter", "Quit", "Esci", "Sortir");
     }
 
     // Primera pantalla al abrir el juego: qué idioma se quiere aprender.
@@ -116,29 +117,38 @@ public class MainMenuController : MonoBehaviour
         langScreen = Rect("LangScreen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         langScreen.GetComponent<Image>().color = BgDeep;
 
-        MakeLabel("LangTitle", langScreen.transform, "P O K E W O R D",
+        MakeLabel("LangTitle", langScreen.transform, "L I N G U A   N O I R",
             new Vector2(0, 260), new Vector2(900, 90),
-            56f, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
+            44f, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
 
         MakeLabel("LangQuestion", langScreen.transform, "¿Qué idioma quieres aprender?",
             new Vector2(0, 120), new Vector2(900, 50),
             28f, Cream, TextAlignmentOptions.Center, FontStyles.Normal);
 
+        // Cuatro botones no caben con el alto y el paso de tres: bajan a 72 de
+        // alto y 82 de paso, y la nota de abajo se aparta. Con el reparto viejo
+        // el cuarto botón se comía la nota.
         MakeBtn("BtnFrench", langScreen.transform, "FRANCÉS",
-            new Vector2(0, 20), new Vector2(440, 78),
-            Gold, BgDeep, 30f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangFrench), bordered: true);
+            new Vector2(0, 50), new Vector2(440, 72),
+            Gold, BgDeep, 28f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangFrench), bordered: true);
 
         MakeBtn("BtnEnglish", langScreen.transform, "INGLÉS",
-            new Vector2(0, -70), new Vector2(440, 78),
-            NavyLight, Gold, 30f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangEnglish));
+            new Vector2(0, -32), new Vector2(440, 72),
+            NavyLight, Gold, 28f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangEnglish));
 
         MakeBtn("BtnItalian", langScreen.transform, "ITALIANO",
-            new Vector2(0, -160), new Vector2(440, 78),
-            NavyLight, Gold, 30f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangItalian));
+            new Vector2(0, -114), new Vector2(440, 72),
+            NavyLight, Gold, 28f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangItalian));
+
+        // "CATALÀ" y no "CATALÁN": en la pantalla donde eliges qué idioma
+        // aprender, cada lengua se nombra a sí misma.
+        MakeBtn("BtnCatalan", langScreen.transform, "CATALÀ",
+            new Vector2(0, -196), new Vector2(440, 72),
+            NavyLight, Gold, 28f, FontStyles.Bold, () => ChooseLanguage(GameSettings.LangCatalan));
 
         MakeLabel("LangNote", langScreen.transform,
             "El juego está en español. Cambia el idioma que hablan\nlos personajes con los que investigas.",
-            new Vector2(0, -280), new Vector2(860, 70),
+            new Vector2(0, -300), new Vector2(860, 70),
             17f, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
     }
 
@@ -182,14 +192,19 @@ public class MainMenuController : MonoBehaviour
             new Vector2(0, titleY + 62), new Vector2(700, 36),
             20f, CreamDim, TextAlignmentOptions.Center, FontStyles.Normal);
 
-        // Game title
-        MakeLabel("Title", root, "P O K E W O R D",
+        // Game title. «Pokeword» (Pokémon + capturar palabras) se retiró el
+        // 24/08/2026: describía un juego de vocabulario que ya no existe.
+        //
+        // El cuerpo baja de 80 a 62 porque el nombre nuevo es más largo — con
+        // el espaciado, "L I N G U A   N O I R" son 21 caracteres frente a los
+        // 17 de antes, y a 80 se salía de los 900 de ancho.
+        MakeLabel("Title", root, "L I N G U A   N O I R",
             new Vector2(0, titleY), new Vector2(900, 110),
-            80f, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
+            62f, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
 
         // Tagline. Era "en vivant" cuando el juego iba de sobrevivir recién
         // llegado a Marsella; desde el 18/08/2026 el juego es exclusivamente
-        // de resolver misterios y el jugador es un detective privado, así que
+        // de resolver misterios y el jugador es un inspector de policía, así que
         // lo que se aprende hablando ya no es vivir, es investigar.
         MakeLabel("Tagline", root, "",   // lo rellena ApplyMenuLanguage
             new Vector2(0, titleY - 72), new Vector2(700, 36),
@@ -251,7 +266,7 @@ public class MainMenuController : MonoBehaviour
         fRT.anchoredPosition = new Vector2(0, 24);
         fRT.sizeDelta = new Vector2(700, 28);
         var ftxt = footer.AddComponent<TextMeshProUGUI>();
-        ftxt.text      = "Pokeword  ·  Marseille, 1941  ·  v0.1";
+        ftxt.text      = "Lingua Noir  ·  Marseille, 1941  ·  v0.1";
         ftxt.fontSize  = 14f;
         ftxt.color     = CreamDim;
         ftxt.alignment = TextAlignmentOptions.Center;

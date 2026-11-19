@@ -21,7 +21,9 @@ public class PhraseTTSClient : MonoBehaviour
     {
         // Sin voiceId el servidor usaba la voz genérica, que es francesa: en una
         // partida en inglés se oía el texto inglés leído con acento francés.
-        string voice = voiceId ?? (GameSettings.IsEnglish ? "read_en" : GameSettings.IsItalian ? "read_it" : "generic");
+        string voice = voiceId ?? (GameSettings.IsEnglish ? "read_en"
+                                 : GameSettings.IsItalian ? "read_it"
+                                 : GameSettings.IsCatalan ? "read_ca" : "generic");
         var req = new SynthRequest { text = text, voiceId = voice };
         string json = JsonUtility.ToJson(req);
 

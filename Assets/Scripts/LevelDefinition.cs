@@ -6,11 +6,12 @@ using System.Collections.Generic;
 // francés — entonces se cae al francés y no se rompe nada.
 public static class LangText
 {
-    public static string Pick(string es, string fr, string en = null, string it = null)
+    public static string Pick(string es, string fr, string en = null, string it = null, string ca = null)
     {
         if (GameSettings.IsBasic) return es;
         if (GameSettings.IsEnglish && !string.IsNullOrEmpty(en)) return en;
         if (GameSettings.IsItalian && !string.IsNullOrEmpty(it)) return it;
+        if (GameSettings.IsCatalan && !string.IsNullOrEmpty(ca)) return ca;
         return fr;   // idioma original, y red de seguridad si falta traducción
     }
 }
@@ -41,16 +42,19 @@ public class LevelCheckpoint
 
     public string labelIt;
 
-    public LevelCheckpoint(string id, string labelFr, string labelEs, string labelEn = null, string labelIt = null)
+    public string labelCa;
+
+    public LevelCheckpoint(string id, string labelFr, string labelEs, string labelEn = null, string labelIt = null, string labelCa = null)
     {
         this.id      = id;
         this.labelFr = labelFr;
         this.labelEs = labelEs;
         this.labelEn = labelEn;
         this.labelIt = labelIt;
+        this.labelCa = labelCa;
     }
 
-    public string DisplayLabel => LangText.Pick(labelEs, labelFr, labelEn, labelIt);
+    public string DisplayLabel => LangText.Pick(labelEs, labelFr, labelEn, labelIt, labelCa);
 }
 
 // MODO DETECTIVE — una línea del checklist de objetivos.
@@ -76,17 +80,19 @@ public class LevelObjective
     // Sobrecarga con inglés. Separada porque `params` tiene que ir el último
     // y no admite un opcional detrás.
     public string labelIt;
+    public string labelCa;
 
-    public LevelObjective(string labelFr, string labelEs, string labelEn, string[] requiredIds, string labelIt = null)
+    public LevelObjective(string labelFr, string labelEs, string labelEn, string[] requiredIds, string labelIt = null, string labelCa = null)
     {
         this.labelFr     = labelFr;
         this.labelEs     = labelEs;
         this.labelEn     = labelEn;
         this.labelIt     = labelIt;
+        this.labelCa     = labelCa;
         this.requiredIds = requiredIds;
     }
 
-    public string DisplayLabel => LangText.Pick(labelEs, labelFr, labelEn, labelIt);
+    public string DisplayLabel => LangText.Pick(labelEs, labelFr, labelEn, labelIt, labelCa);
 }
 
 // MODO DETECTIVE — un hallazgo. Cuando el jugador oye el dato y el servidor
@@ -104,16 +110,19 @@ public class LevelFinding
 
     public string textIt;
 
-    public LevelFinding(string id, string textFr, string textEs, string textEn = null, string textIt = null)
+    public string textCa;
+
+    public LevelFinding(string id, string textFr, string textEs, string textEn = null, string textIt = null, string textCa = null)
     {
         this.id     = id;
         this.textFr = textFr;
         this.textEs = textEs;
         this.textEn = textEn;
         this.textIt = textIt;
+        this.textCa = textCa;
     }
 
-    public string DisplayText => LangText.Pick(textEs, textFr, textEn, textIt);
+    public string DisplayText => LangText.Pick(textEs, textFr, textEn, textIt, textCa);
 }
 
 // Una pista del botón de ayuda. Se muestra la PRIMERA cuyo `untilId` aún no
@@ -133,16 +142,19 @@ public class LevelHint
 
     public string textIt;
 
-    public LevelHint(string untilId, string textFr, string textEs, string textEn = null, string textIt = null)
+    public string textCa;
+
+    public LevelHint(string untilId, string textFr, string textEs, string textEn = null, string textIt = null, string textCa = null)
     {
         this.untilId = untilId;
         this.textFr  = textFr;
         this.textEs  = textEs;
         this.textEn  = textEn;
         this.textIt  = textIt;
+        this.textCa  = textCa;
     }
 
-    public string DisplayText => LangText.Pick(textEs, textFr, textEn, textIt);
+    public string DisplayText => LangText.Pick(textEs, textFr, textEn, textIt, textCa);
 }
 
 // A level's fixed configuration — box "El Puerto", pilot caja (see memory:
@@ -203,6 +215,18 @@ public class LevelDefinition
     // Id del reto que concede la 2ª estrella en modo detective (★ Le menteur).
     public string secondStarCheckpoint;
 
+    // Palabras que hay que HABLAR (por micrófono) para la 2ª estrella en los
+    // niveles que no tienen `secondStarCheckpoint` — los casos débutant.
+    //
+    // Sustituye a la estrella de vocabulario, que era del objetivo viejo
+    // ("aprender palabras") y además estaba mal calibrada: capturar las 6
+    // palabras clave era casi imposible en 40 minutos de partida.
+    //
+    // Se premia HABLAR y no escuchar a propósito: escuchar pasa solo por jugar,
+    // hablar es lo que la gente evita. La estrella tiene que empujar donde
+    // duele. Lo escuchado se enseña igual en la pantalla final, como dato.
+    public int spokenWordsTarget;
+
     // Checklist visible del caso. `checkpoints` sigue siendo lo que COMPLETA
     // el nivel; esto es solo la guía de qué hacer.
     public List<LevelObjective> objectives;
@@ -218,11 +242,13 @@ public class LevelDefinition
     // que cambia de verdad son los expedientes, y esos viven en el servidor.
     public List<TargetWord> targetWordsEn;
     public List<TargetWord> targetWordsIt;
+    public List<TargetWord> targetWordsCa;
 
     // Textos del nivel en inglés, para partidas avanzadas que se juegan en
     // inglés. En débutant no hacen falta: allí siempre se ve el español.
     public string briefTitleEn, briefSummaryEn, epilogueEn, epilogueFailEn;
     public string briefTitleIt, briefSummaryIt, epilogueIt, epilogueFailIt;
+    public string briefTitleCa, briefSummaryCa, epilogueCa, epilogueFailCa;
 
     public List<TargetWord> ActiveTargetWords
     {
@@ -230,6 +256,7 @@ public class LevelDefinition
         {
             if (GameSettings.IsEnglish && targetWordsEn != null && targetWordsEn.Count > 0) return targetWordsEn;
             if (GameSettings.IsItalian && targetWordsIt != null && targetWordsIt.Count > 0) return targetWordsIt;
+            if (GameSettings.IsCatalan && targetWordsCa != null && targetWordsCa.Count > 0) return targetWordsCa;
             return targetWords;
         }
     }
@@ -270,6 +297,7 @@ public class LevelDefinition
         Dictionary<string, string> npcObjectiveKeys = null, List<LevelCheckpoint> checkpoints = null,
         List<string> allowedScenes = null,
         bool detectiveMode = false, int displayNumber = 0, string secondStarCheckpoint = null,
+        int spokenWordsTarget = 0,
         List<LevelObjective> objectives = null, List<LevelFinding> findings = null,
         List<LevelHint> hints = null, string epilogueFr = null, string epilogueEs = null,
         string epilogueFailFr = null, string epilogueFailEs = null, string failCheckpoint = null,
@@ -278,7 +306,10 @@ public class LevelDefinition
         string epilogueEn = null, string epilogueFailEn = null,
         List<TargetWord> targetWordsIt = null,
         string briefTitleIt = null, string briefSummaryIt = null,
-        string epilogueIt = null, string epilogueFailIt = null)
+        string epilogueIt = null, string epilogueFailIt = null,
+        List<TargetWord> targetWordsCa = null,
+        string briefTitleCa = null, string briefSummaryCa = null,
+        string epilogueCa = null, string epilogueFailCa = null)
     {
         this.id               = id;
         this.title             = title;
@@ -298,6 +329,7 @@ public class LevelDefinition
         this.detectiveMode     = detectiveMode;
         this.displayNumber     = displayNumber;
         this.secondStarCheckpoint = secondStarCheckpoint;
+        this.spokenWordsTarget    = spokenWordsTarget;
         this.objectives        = objectives;
         this.findings          = findings;
         this.hints             = hints;
@@ -316,6 +348,11 @@ public class LevelDefinition
         this.briefSummaryIt    = briefSummaryIt;
         this.epilogueIt        = epilogueIt;
         this.epilogueFailIt    = epilogueFailIt;
+        this.targetWordsCa     = targetWordsCa;
+        this.briefTitleCa      = briefTitleCa;
+        this.briefSummaryCa    = briefSummaryCa;
+        this.epilogueCa        = epilogueCa;
+        this.epilogueFailCa    = epilogueFailCa;
     }
 
     // Siguiente pista útil: la primera cuyo reto todavía no se ha alcanzado.
@@ -327,11 +364,11 @@ public class LevelDefinition
         return null;
     }
 
-    public string DisplayTitle   => LangText.Pick(briefTitleEs,   briefTitle,   briefTitleEn,   briefTitleIt);
-    public string DisplaySummary => LangText.Pick(briefSummaryEs, briefSummary, briefSummaryEn, briefSummaryIt);
+    public string DisplayTitle   => LangText.Pick(briefTitleEs,   briefTitle,   briefTitleEn,   briefTitleIt,   briefTitleCa);
+    public string DisplaySummary => LangText.Pick(briefSummaryEs, briefSummary, briefSummaryEn, briefSummaryIt, briefSummaryCa);
     public int    TileNumber     => displayNumber > 0 ? displayNumber : id;
-    public string DisplayEpilogue     => LangText.Pick(epilogueEs,     epilogueFr,     epilogueEn,     epilogueIt);
-    public string DisplayEpilogueFail => LangText.Pick(epilogueFailEs, epilogueFailFr, epilogueFailEn, epilogueFailIt);
+    public string DisplayEpilogue     => LangText.Pick(epilogueEs,     epilogueFr,     epilogueEn,     epilogueIt,     epilogueCa);
+    public string DisplayEpilogueFail => LangText.Pick(epilogueFailEs, epilogueFailFr, epilogueFailEn, epilogueFailIt, epilogueFailCa);
 }
 
 // Best result reached so far for a level — persisted via SaveSystem.

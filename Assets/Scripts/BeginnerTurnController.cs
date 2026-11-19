@@ -70,6 +70,7 @@ public class BeginnerTurnController : MonoBehaviour
     bool everOpened;
     float recordStartTime;
     Action<Dictionary<string, (string fr, string es)>> onDone;
+    Action onCancel;   // deshacer el turno en el servidor (ver CancelTurn)
 
     // Cachea el audio del turno actual — pulsar el botón varias veces para
     // la misma frase no debe volver a pedirlo al servidor cada vez.
@@ -109,10 +110,11 @@ public class BeginnerTurnController : MonoBehaviour
     // de escape" que haya que ganarse como el botón Saltar, es una ayuda
     // para aprender a decirlo bien. Null/"" (el servidor no siempre la manda)
     // la oculta sin más, nunca bloquea el turno.
-    public void RunTurn(string phrase, string phonetic, Action<Dictionary<string, (string fr, string es)>> onDoneCallback)
+    public void RunTurn(string phrase, string phonetic, Action<Dictionary<string, (string fr, string es)>> onDoneCallback, Action onCancelCallback = null)
     {
         targetPhrase = phrase;
         onDone       = onDoneCallback;
+        onCancel     = onCancelCallback;
         attemptCount = 0;
 
         var level       = LevelManager.Instance?.CurrentLevel;
@@ -163,6 +165,10 @@ public class BeginnerTurnController : MonoBehaviour
 
         if (!recorder.IsRecording)
         {
+            // Callar al NPC antes de abrir el micro: si no, se graba su propia
+            // voz, el reconocedor la transcribe y el jugador acaba "diciendo"
+            // lo que acababa de oír.
+            NPCVoicePlayer.Instance?.Silence();
             recorder.StartRecording();
         }
         else
@@ -236,6 +242,18 @@ public class BeginnerTurnController : MonoBehaviour
         {
             feedbackText.color = FeedbackOk;
             feedbackText.text  = es ? "¡Bien dicho!" : "Bien dit !";
+
+            // Repetición de habla conseguida. Se cuenta AQUÍ y no al empezar a
+            // grabar: solo cuenta lo que el reconocedor ha dado por bueno, y
+            // se cuenta la frase objetivo, no lo que transcribió — si el
+            // jugador se comió una palabra, no la ha dicho.
+            //
+            // Los intentos fallidos NO suman. Es discutible (también son habla
+            // real), pero el número tiene que poder enseñarse sin asteriscos:
+            // "has hablado X palabras en catalán" solo es verdad si salieron
+            // bien.
+            LevelManager.Instance?.ReportSpoken(targetPhrase, Time.time - recordStartTime);
+
             FinishTurn();
         }
         else
@@ -303,6 +321,36 @@ public class BeginnerTurnController : MonoBehaviour
         onDone?.Invoke(capturable);
     }
 
+    // Cerrar el turno TIRÁNDOLO, como si el jugador nunca hubiera grabado.
+    //
+    // Hace falta porque en las pruebas la gente graba sin querer —la voz del
+    // propio NPC, un ruido— y el juego les obligaba a recitar eso en voz alta,
+    // con tres intentos por delante antes de que apareciera siquiera el botón
+    // de saltar. Quedaban atrapados dentro de un error suyo de medio segundo.
+    //
+    // Se distingue de Saltar en lo importante: saltar es rendirse ante una
+    // frase legítima y cuenta para la penalización de estrellas; esto no
+    // cuenta para nada, porque no ha pasado nada.
+    void CancelTurn()
+    {
+        recorder?.CancelRecording();
+
+        // NO se llama a onDone: la respuesta del NPC que estaba retenida se
+        // descarta sin revelarse, y con ella sus checkpoints — el servidor solo
+        // los da por buenos cuando el jugador se gana la frase leyéndola.
+        onDone = null;
+        root.SetActive(false);
+
+        // Y que el NPC tampoco lo recuerde.
+        onCancel?.Invoke();
+
+        // Y la pantalla vuelve a como estaba: fuera lo que se grabó por
+        // accidente, y de vuelta la última línea del NPC, que hablar había
+        // escondido. Sin esto la conversación se quedaba en blanco.
+        SpeechCaptionUI.Instance?.HidePlayerLine();
+        SpeechCaptionUI.Instance?.RestoreNpcLine();
+    }
+
     void ResetRecordButton()
     {
         if (recordBtnLabel != null) recordBtnLabel.text  = GameSettings.IsBasic ? "GRABAR" : "ENREGISTRER";
@@ -348,6 +396,41 @@ public class BeginnerTurnController : MonoBehaviour
         var cardImg = card.GetComponent<Image>();
         cardImg.sprite = ParchmentSprite.GetPaper(); cardImg.type = Image.Type.Sliced; cardImg.color = Color.white;
 
+        // ── Botón de descartar (X), esquina superior derecha de la tarjeta ──
+        // Visible desde el primer instante, a diferencia de Saltar, que hay que
+        // "ganarse" con tres fallos: quien graba sin querer necesita la salida
+        // YA, no después de recitar un ruido tres veces.
+        var closeGO = new GameObject("CloseBtn", typeof(RectTransform), typeof(Image));
+        closeGO.transform.SetParent(card.transform, false);
+        var clRT = closeGO.GetComponent<RectTransform>();
+        clRT.anchorMin = clRT.anchorMax = new Vector2(1f, 1f);
+        clRT.pivot     = new Vector2(1f, 1f);
+        clRT.anchoredPosition = new Vector2(-14, -14);
+        clRT.sizeDelta = new Vector2(64, 64);   // objetivo táctil holgado en móvil
+        var clImg = closeGO.GetComponent<Image>();
+        // Tinta oscura translúcida sobre pergamino era prácticamente el mismo
+        // color que el panel: el botón estaba ahí y no se veía. Va relleno y
+        // opaco, con la X clara encima — invertido respecto a la tarjeta, que
+        // es papel claro con letra oscura.
+        clImg.color = new Color(0.235f, 0.161f, 0.098f, 0.92f);
+
+        var clLbl = new GameObject("Label", typeof(RectTransform));
+        clLbl.transform.SetParent(closeGO.transform, false);
+        var cllRT = clLbl.GetComponent<RectTransform>();
+        cllRT.anchorMin = Vector2.zero; cllRT.anchorMax = Vector2.one;
+        cllRT.offsetMin = Vector2.zero; cllRT.offsetMax = Vector2.zero;
+        var clTxt = clLbl.AddComponent<TextMeshProUGUI>();
+        clTxt.text      = "X";
+        clTxt.fontSize  = 34;
+        clTxt.color     = new Color(0.98f, 0.96f, 0.90f, 1f);   // blanco cálido sobre la tinta
+        clTxt.alignment = TextAlignmentOptions.Center;
+        clTxt.fontStyle = FontStyles.Bold;
+        clTxt.raycastTarget = false;
+
+        var closeBtn = closeGO.AddComponent<Button>();
+        closeBtn.targetGraphic = clImg;
+        closeBtn.onClick.AddListener(CancelTurn);
+
         var borderGO = new GameObject("Border", typeof(RectTransform), typeof(Image));
         borderGO.transform.SetParent(card.transform, false);
         borderGO.transform.SetAsFirstSibling();
@@ -358,13 +441,13 @@ public class BeginnerTurnController : MonoBehaviour
         bImg.sprite = ParchmentSprite.GetInk(); bImg.type = Image.Type.Sliced; bImg.color = Color.white;
 
         headerText = MakeLabel(card.transform, "Header", "",   // lo pone RunTurn según el idioma
-            new Vector2(0, 300), new Vector2(560, 60), 26, GoldInk, TextAlignmentOptions.Center, FontStyles.Bold);
+            new Vector2(0, 300), new Vector2(430, 60), 26, GoldInk, TextAlignmentOptions.Center, FontStyles.Bold);
 
         phraseText = MakeLabel(card.transform, "Phrase", "",
             new Vector2(0, 200), new Vector2(560, 110), 32, PhraseHighlight, TextAlignmentOptions.Center, FontStyles.Bold);
         phraseText.enableWordWrapping = true;
         phraseText.enableAutoSizing   = true;
-        phraseText.fontSizeMin = 20; phraseText.fontSizeMax = 32;
+        phraseText.fontSizeMin = 26; phraseText.fontSizeMax = 40;
 
         // Botón "▶" — escucha cómo suena la frase en francés (TTS del
         // servidor, independiente de la grabación del jugador). Fila propia,
@@ -416,7 +499,7 @@ public class BeginnerTurnController : MonoBehaviour
             new Vector2(0, 15), new Vector2(560, 70), 28, PhraseHighlight, TextAlignmentOptions.Center, FontStyles.Italic);
         phoneticText.enableWordWrapping = true;
         phoneticText.enableAutoSizing   = true;
-        phoneticText.fontSizeMin = 20; phoneticText.fontSizeMax = 28;
+        phoneticText.fontSizeMin = 24; phoneticText.fontSizeMax = 34;
 
         // Botón GRABAR — mismo patrón toca-graba/toca-para que
         // DialogueSystem.OnMicButtonClicked, pero con un VoiceRecorder
@@ -482,6 +565,10 @@ public class BeginnerTurnController : MonoBehaviour
         skipBtn.targetGraphic = skImg;
         skipBtn.onClick.AddListener(OnSkipClicked);
         skipBtnGO.SetActive(false);
+
+        // Lo último de la tarjeta: en UGUI el orden de jerarquía es el orden de
+        // dibujado, y todo lo creado después de la X la tapaba.
+        closeGO.transform.SetAsLastSibling();
     }
 
     static TMP_Text MakeLabel(Transform parent, string name, string text, Vector2 pos, Vector2 size,
@@ -497,6 +584,10 @@ public class BeginnerTurnController : MonoBehaviour
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text; tmp.fontSize = fontSize; tmp.color = color;
         tmp.alignment = align; tmp.fontStyle = style;
+        // Ninguna etiqueta de esta tarjeta es interactiva, y de serie TMP sí
+        // captura clics: la cabecera se comía las pulsaciones del botón de
+        // cerrar, que cae debajo de su rectángulo.
+        tmp.raycastTarget = false;
         return tmp;
     }
 }

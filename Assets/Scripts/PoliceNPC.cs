@@ -36,4 +36,20 @@ public class PoliceNPC : DetectiveNPC
 
     protected override string GreetingTranslationIt =>
         "Agente Bonnet. Espero un nombre.";
+
+    protected override string GreetingCa =>
+        "Agent Bonnet. Espero un nom.";
+
+    protected override string GreetingTranslationCa =>
+        "Agente Bonnet. Espero un nombre.";
+
+    protected override string GreetingAgain   => "Alors ?";
+    protected override string GreetingAgainEn => "Well?";
+    protected override string GreetingAgainIt => "Allora?";
+    protected override string GreetingAgainCa => "I doncs?";
+
+    protected override string GreetingAgainTranslation   => "¿Y bien?";
+    protected override string GreetingAgainTranslationEn => "¿Y bien?";
+    protected override string GreetingAgainTranslationIt => "¿Y bien?";
+    protected override string GreetingAgainTranslationCa => "¿Y bien?";
 }

@@ -117,7 +117,7 @@ public class WordCapturePopup : MonoBehaviour
         Anchor(esGO, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
                new Vector2(0, -72), new Vector2(0, 34));
         esText = esGO.AddComponent<TextMeshProUGUI>();
-        esText.fontSize = 22; esText.color = TranslationHighlight;
+        esText.fontSize = 27; esText.color = TranslationHighlight;
         esText.fontStyle = FontStyles.Bold;
         esText.alignment = TextAlignmentOptions.Center;
 
@@ -126,7 +126,7 @@ public class WordCapturePopup : MonoBehaviour
         Anchor(ctxGO, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f),
                new Vector2(0, 6), new Vector2(-20, 24));
         ctxText = ctxGO.AddComponent<TextMeshProUGUI>();
-        ctxText.fontSize = 13; ctxText.color = SpanishInk;
+        ctxText.fontSize = 17; ctxText.color = SpanishInk;
         ctxText.fontStyle = FontStyles.Italic;
         ctxText.alignment = TextAlignmentOptions.Center;
         ctxText.enableWordWrapping = true;

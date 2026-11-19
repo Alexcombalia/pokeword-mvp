@@ -72,12 +72,12 @@ public class PokeWorldController : MonoBehaviour
             rt.pivot     = new Vector2(0.5f, 1);
             rt.offsetMin = new Vector2(0, 0);
             rt.offsetMax = new Vector2(0, 0);
-            rt.sizeDelta = new Vector2(0, 44);
+            rt.sizeDelta = new Vector2(0, 56);
 
             var tmp = row.GetComponent<TMP_Text>();
             if (tmp != null)
             {
-                tmp.fontSize = 24;
+                tmp.fontSize = 30;
                 tmp.fontStyle = TMPro.FontStyles.Bold;
                 tmp.enableWordWrapping = false;
                 tmp.overflowMode = TMPro.TextOverflowModes.Overflow;
@@ -108,10 +108,15 @@ public class PokeWorldController : MonoBehaviour
             var tmp = row.GetComponent<TMP_Text>();
             if (tmp != null)
             {
-                tmp.fontSize = 18;
+                tmp.fontSize = 23;
                 tmp.alignment = TMPro.TextAlignmentOptions.Center;
                 tmp.margin = new Vector4(20, 8, 20, 8);
-                tmp.text = "<color=#5A7A9A><i>Aucun mot capturé pour l'instant.\nParle avec les habitants de Marseille !</i></color>";
+                tmp.text = "<color=#5A7A9A><i>" + LangText.Pick(
+                    "Todavía no has capturado ninguna palabra.\n¡Toca las palabras doradas cuando hables!",
+                    "Aucun mot capturé pour l'instant.\nTouche les mots dorés quand tu parles !",
+                    "No words captured yet.\nTap the golden words while you talk!",
+                    "Ancora nessuna parola catturata.\nTocca le parole dorate mentre parli!",
+                    "Encara no has capturat cap paraula.\nToca les paraules daurades quan parlis!") + "</i></color>";
             }
         }
     }

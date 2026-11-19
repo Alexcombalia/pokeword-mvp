@@ -47,6 +47,8 @@ public class SpeechCaptionUI : MonoBehaviour
     TMP_Text playerTranslationText;
     TMPLinkClickHandler playerTranslationLinkHandler;
 
+    GameObject npcReplayBtn;
+
     Transform npcAnchor;
     bool npcVisible;
 
@@ -61,6 +63,17 @@ public class SpeechCaptionUI : MonoBehaviour
 
     void LateUpdate()
     {
+        // El botón de repetir se pinta según haya audio o no, y no según lo
+        // que pasara al mostrar la línea: la voz llega DESPUÉS del texto (el
+        // servidor la manda en la misma respuesta, pero decodificarla es
+        // asíncrono), así que si se decidiera una sola vez en ShowNpcLine
+        // nunca aparecería.
+        if (npcReplayBtn != null)
+        {
+            bool show = npcVisible && NPCVoicePlayer.Instance != null && NPCVoicePlayer.Instance.HasVoice;
+            if (npcReplayBtn.activeSelf != show) npcReplayBtn.SetActive(show);
+        }
+
         if (!npcVisible || npcAnchor == null) return;
         if (sceneCamera == null) sceneCamera = FindObjectOfType<Camera>();
         if (sceneCamera == null) return;
@@ -84,10 +97,19 @@ public class SpeechCaptionUI : MonoBehaviour
         // encima de LevelHUD, cualquier solape lo tapa por completo. Con dos
         // idiomas dentro de la misma burbuja (nombre + francés + traducción)
         // puede llegar a 3 líneas, así que necesita más margen que antes.
-        float marginTop    = 480f;
+        // El margen superior ya no es fijo: sigue al pergamino de objetivos,
+        // que crece con cada hallazgo y, desde que la letra es más grande
+        // (16/09/2026), bastante más. Con 480 fijos, en un caso avanzado el
+        // globo acababa por detrás del panel — y este canvas se dibuja ENCIMA
+        // de LevelHUD, así que el que quedaba tapado era el objetivo.
+        float bannerTop = Mathf.Abs(LevelHUD.BannerBottomY) + 40f;
+        float marginTop = Mathf.Max(480f, bannerTop);
         float minY = canvasRT.rect.yMin + 60f;
         float maxY = canvasRT.rect.yMax - marginTop;
-        localPoint.y = Mathf.Clamp(localPoint.y, minY, maxY);
+        // Con un pergamino muy alto el margen puede comerse toda la pantalla y
+        // dejar min > max; Mathf.Clamp devolvería basura. Entonces manda el
+        // suelo: más vale el globo bajo que el globo en un sitio imposible.
+        localPoint.y = (minY <= maxY) ? Mathf.Clamp(localPoint.y, minY, maxY) : minY;
 
         // El clamp horizontal sujetaba el CENTRO del globo con 60 de margen,
         // no sus bordes. Con una burbuja de 620 de ancho y pivote centrado eso
@@ -107,6 +129,16 @@ public class SpeechCaptionUI : MonoBehaviour
         bubbleRT.anchoredPosition = localPoint;
     }
 
+    // Lo último que hay escrito en pantalla. Lo lee el profesor para poder
+    // contestar a "¿qué ha dicho?" sin que el jugador tenga que copiar la
+    // frase a mano — y si hay que copiarla a mano, nadie lo hace.
+    //
+    // Se leen de la UI y no de DialogueSystem a propósito: aquí está lo que el
+    // jugador TIENE DELANTE, que es de lo que pregunta, sin importar por qué
+    // camino (detective, genérico, Jacques o saludo) haya llegado.
+    public string LastNpcLine    => npcText != null ? npcText.text : "";
+    public string LastPlayerLine => playerText != null ? playerText.text : "";
+
     // Llamar antes de mostrar líneas, para que el globo de Jacques sepa a quién seguir.
     public void SetAnchors(Transform npc, Transform player)
     {
@@ -115,6 +147,12 @@ public class SpeechCaptionUI : MonoBehaviour
 
     public void ShowNpcLine(string npcName, string processedText, System.Action<string> onWordClicked)
     {
+        // Línea nueva: lo que hubiera grabado ya no es lo que se está leyendo.
+        // Quien llame a PlayVoice justo después vuelve a dejar el botón activo;
+        // una línea sin voz (un error de red, por ejemplo) lo deja apagado en
+        // vez de repetir la frase anterior.
+        NPCVoicePlayer.Instance?.ClearVoice();
+
         npcNameLabel.text = npcName.ToUpper();
         npcText.text = processedText;
         npcLinkHandler.OnLinkClicked = onWordClicked;
@@ -192,6 +230,28 @@ public class SpeechCaptionUI : MonoBehaviour
         npcTranslationText.gameObject.SetActive(true);
     }
 
+    // Quita SOLO la línea del jugador, dejando en pie la del NPC. Lo usa el
+    // botón de descartar del turno de lectura: si el jugador grabó algo sin
+    // querer, esa línea suya tiene que desaparecer como si nunca la hubiera
+    // dicho, pero lo último que dijo el NPC sigue siendo válido y debe
+    // quedarse en pantalla.
+    public void HidePlayerLine()
+    {
+        playerBubble.SetActive(false);
+        playerTranslationText.gameObject.SetActive(false);
+    }
+
+    // Vuelve a mostrar la última línea del NPC. Los textos siguen ahí: hablar
+    // solo esconde su globo (ver ShowPlayerLine), no lo borra. Sirve para
+    // deshacer una grabación accidental y dejar la pantalla exactamente como
+    // estaba antes de que el jugador abriera la boca.
+    public void RestoreNpcLine()
+    {
+        if (string.IsNullOrEmpty(npcText.text)) return;
+        npcBubble.SetActive(true);
+        npcVisible = true;
+    }
+
     public void HideAll()
     {
         npcBubble.SetActive(false);
@@ -233,13 +293,49 @@ public class SpeechCaptionUI : MonoBehaviour
         var ntGO = new GameObject("Translation", typeof(RectTransform));
         ntGO.transform.SetParent(npcText.transform.parent, false);
         npcTranslationText = ntGO.AddComponent<TextMeshProUGUI>();
-        npcTranslationText.fontSize = 26;
+        npcTranslationText.fontSize = 31;
         npcTranslationText.fontStyle = FontStyles.Bold | FontStyles.Italic;
         npcTranslationText.alignment = TextAlignmentOptions.Center;
         npcTranslationText.enableWordWrapping = true;
         npcTranslationText.color = SpanishInk;
         npcTranslationText.raycastTarget = false;
         npcTranslationText.gameObject.SetActive(false);
+
+        // Botón de repetir, esquina superior derecha del globo. Va con
+        // ignoreLayout, como el borde y el relleno: si entrase en el
+        // VerticalLayoutGroup empujaría el texto y cambiaría el alto del globo
+        // según hubiera audio o no.
+        //
+        // Repetir no cuesta nada ni cambia nada: el audio ya está descargado y
+        // sonó solo la primera vez. Solo sirve para volver a oírlo, que es lo
+        // que hace falta cuando estás aprendiendo el idioma.
+        npcReplayBtn = new GameObject("ReplayBtn", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        npcReplayBtn.transform.SetParent(npcBubble.transform, false);
+        npcReplayBtn.GetComponent<LayoutElement>().ignoreLayout = true;
+        var rbRT = npcReplayBtn.GetComponent<RectTransform>();
+        rbRT.anchorMin = rbRT.anchorMax = new Vector2(1f, 1f);
+        rbRT.pivot     = new Vector2(1f, 1f);
+        rbRT.anchoredPosition = new Vector2(-14, -10);
+        rbRT.sizeDelta = new Vector2(46, 46);
+        var rbImg = npcReplayBtn.GetComponent<Image>();
+        rbImg.sprite = RoundedRectSprite.GetSprite();
+        rbImg.type   = Image.Type.Sliced;
+        rbImg.color  = new Color(0.235f, 0.161f, 0.098f, 0.85f);  // tinta sobre el papel
+
+        var rbIcon = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        rbIcon.transform.SetParent(npcReplayBtn.transform, false);
+        var rbiRT = rbIcon.GetComponent<RectTransform>();
+        rbiRT.anchorMin = Vector2.zero; rbiRT.anchorMax = Vector2.one;
+        rbiRT.offsetMin = new Vector2(15, 12); rbiRT.offsetMax = new Vector2(-12, -12);
+        var rbiImg = rbIcon.GetComponent<Image>();
+        rbiImg.sprite = PlayIcon.GetSprite();
+        rbiImg.color  = new Color(0.98f, 0.96f, 0.90f, 1f);
+        rbiImg.raycastTarget = false;
+
+        var replayBtn = npcReplayBtn.AddComponent<Button>();
+        replayBtn.targetGraphic = rbImg;
+        replayBtn.onClick.AddListener(() => NPCVoicePlayer.Instance?.Replay());
+        npcReplayBtn.SetActive(false);
 
         npcBubble.SetActive(false);
 
@@ -270,7 +366,7 @@ public class SpeechCaptionUI : MonoBehaviour
             out _, out var playerNameLabel, out playerText);
         // La etiqueta del jugador estaba fija en francés, incluso en débutant, donde
         // todo lo demás está en español. Sigue el mismo criterio que el resto.
-        playerNameLabel.text = LangText.Pick("YO", "MOI", "ME", "IO");
+        playerNameLabel.text = LangText.Pick("YO", "MOI", "ME", "IO", "JO");
         playerText.color = FrenchInk;
 
         // Segunda línea, debajo del cuerpo — traducción al francés cuando el
@@ -278,7 +374,7 @@ public class SpeechCaptionUI : MonoBehaviour
         var ptGO = new GameObject("Translation", typeof(RectTransform));
         ptGO.transform.SetParent(playerText.transform.parent, false);
         playerTranslationText = ptGO.AddComponent<TextMeshProUGUI>();
-        playerTranslationText.fontSize = 26;
+        playerTranslationText.fontSize = 31;
         playerTranslationText.fontStyle = FontStyles.Bold | FontStyles.Italic;
         playerTranslationText.alignment = TextAlignmentOptions.Center;
         playerTranslationText.enableWordWrapping = true;
@@ -357,7 +453,7 @@ public class SpeechCaptionUI : MonoBehaviour
             var nameGO = new GameObject("Name", typeof(RectTransform));
             nameGO.transform.SetParent(root.transform, false);
             nameLabel = nameGO.AddComponent<TextMeshProUGUI>();
-            nameLabel.fontSize  = 22;
+            nameLabel.fontSize  = 26;
             nameLabel.fontStyle = FontStyles.Bold;
             nameLabel.alignment = TextAlignmentOptions.Center;
             nameLabel.color     = accentColor;
@@ -370,7 +466,7 @@ public class SpeechCaptionUI : MonoBehaviour
         var bodyGO = new GameObject("Body", typeof(RectTransform));
         bodyGO.transform.SetParent(root.transform, false);
         bodyText = bodyGO.AddComponent<TextMeshProUGUI>();
-        bodyText.fontSize  = 34;
+        bodyText.fontSize  = 38;
         bodyText.fontStyle = FontStyles.Bold;
         bodyText.alignment = TextAlignmentOptions.Center;
         bodyText.enableWordWrapping = true;

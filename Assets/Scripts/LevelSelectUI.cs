@@ -22,7 +22,9 @@ public class LevelSelectUI : MonoBehaviour
     GameObject briefPanel;
     TMP_Text   briefTitleText;
     TMP_Text   briefSummaryText;
-    TMP_Text   briefStarsText;
+    TMP_Text   briefStarsHeader;
+    TMP_Text[] briefStarLines = new TMP_Text[3];
+    TMP_Text   briefHintNote;
     TMP_Text   startBtnLabel;
     TMP_Text   briefBackBtnLabel;
     LevelDefinition selectedLevel;
@@ -63,20 +65,58 @@ public class LevelSelectUI : MonoBehaviour
         briefTitleText.text   = def.DisplayTitle;
         briefSummaryText.text = def.DisplaySummary;
 
-        bool es = GameSettings.IsBasic;
-        int wordCount = def.ActiveTargetWords.Count;
-        int starSecs  = Mathf.CeilToInt(def.starTimeSeconds);
-        // Nada de "★" aquí a propósito — ese glyph no existe en la fuente
-        // TMP por defecto y se ve como un cuadrado vacío (mismo bug que ya
-        // se corrigió en las estrellas de verdad, ver StarIcon.cs).
-        briefStarsText.text = LangText.Pick(
-            $"- Consigue el objetivo\n- Captura las {wordCount} palabras clave\n- Hazlo en menos de {starSecs}s",
-            $"- Atteins l'objectif\n- Capture les {wordCount} mots clés\n- Fais-le en moins de {starSecs}s",
-            $"- Reach the objective\n- Capture the {wordCount} key words\n- Do it in under {starSecs}s",
-            $"- Raggiungi l'obiettivo\n- Cattura le {wordCount} parole chiave\n- Fallo in meno di {starSecs}s");
+        // Las tres estrellas, cada una en su línea y con su icono de estrella
+        // de verdad (StarIcon: el glyph "★" no existe en la fuente TMP por
+        // defecto y sale como un cuadrado vacío).
+        //
+        // Antes era una lista de tres guiones sin encabezado, y en las pruebas
+        // nadie entendía que se pudiera salir del nivel con 1, 2 o 3 — se leía
+        // como una lista de deberes obligatorios. Ahora se dice el rango con
+        // todas las letras, se marca cuál es la única obligatoria, y las otras
+        // dos quedan como lo que son: retos que puedes dejar pasar.
+        //
+        // El texto de la 2ª cambia según el nivel: en un caso avanzado la
+        // estrella es romper al mentiroso, no capturar palabras. Prometer una
+        // cosa y puntuar otra es la peor forma de perder una estrella.
+        bool   liarStar = !string.IsNullOrEmpty(def.secondStarCheckpoint);
+        string starTime = TimeText.Threshold(def.starTimeSeconds);
 
-        startBtnLabel.text     = LangText.Pick("EMPEZAR", "COMMENCER", "START", "INIZIA");
-        briefBackBtnLabel.text = LangText.Pick("Volver", "Retour", "Back", "Indietro");
+        briefStarsHeader.text = LangText.Pick(
+            "Puedes acabar con 1, 2 o 3 estrellas",
+            "Tu peux finir avec 1, 2 ou 3 étoiles",
+            "You can finish with 1, 2 or 3 stars",
+            "Puoi finire con 1, 2 o 3 stelle",
+            "Pots acabar amb 1, 2 o 3 estrelles");
+
+        briefStarLines[0].text = (def.detectiveMode
+            ? LangText.Pick("Resuelve el caso", "Résous l'affaire", "Solve the case", "Risolvi il caso", "Resol el cas")
+            : LangText.Pick("Consigue el objetivo", "Atteins l'objectif", "Reach the objective", "Raggiungi l'obiettivo", "Aconsegueix l'objectiu"))
+            + "   " + LangText.Pick("(obligatoria)", "(obligatoire)", "(required)", "(obbligatoria)", "(obligatòria)");
+
+        briefStarLines[1].text = liarStar
+            ? LangText.Pick("Haz confesar al mentiroso", "Fais craquer le menteur",
+                            "Break the liar", "Fai crollare il bugiardo", "Fes caure el mentider")
+            : LangText.Pick($"Habla {def.spokenWordsTarget} palabras en voz alta",
+                            $"Dis {def.spokenWordsTarget} mots à voix haute",
+                            $"Speak {def.spokenWordsTarget} words out loud",
+                            $"Di' {def.spokenWordsTarget} parole ad alta voce",
+                            $"Digues {def.spokenWordsTarget} paraules en veu alta");
+
+        briefStarLines[2].text = LangText.Pick($"Hazlo en menos de {starTime}", $"Fais-le en moins de {starTime}",
+                                               $"Do it in under {starTime}", $"Fallo in meno di {starTime}", $"Fes-ho en menys de {starTime}");
+
+        // Solo donde hay botón de pista: si no, es una regla sobre algo que el
+        // jugador no va a ver en este nivel.
+        briefHintNote.text = def.hintAvailable
+            ? LangText.Pick("Pedir una pista te cuesta una estrella.",
+                            "Demander un indice coûte une étoile.",
+                            "Asking for a hint costs you a star.",
+                            "Chiedere un indizio costa una stella.",
+                            "Demanar una pista et costa una estrella.")
+            : "";
+
+        startBtnLabel.text     = LangText.Pick("EMPEZAR", "COMMENCER", "START", "INIZIA", "COMENÇAR");
+        briefBackBtnLabel.text = LangText.Pick("Volver", "Retour", "Back", "Indietro", "Tornar");
     }
 
     void StartSelected()
@@ -90,7 +130,7 @@ public class LevelSelectUI : MonoBehaviour
     {
         foreach (Transform child in gridPanel.transform) Destroy(child.gameObject);
 
-        MakeLabel(gridPanel.transform, "Title", LangText.Pick("NIVELES", "NIVEAUX", "LEVELS", "LIVELLI"),
+        MakeLabel(gridPanel.transform, "Title", LangText.Pick("NIVELES", "NIVEAUX", "LEVELS", "LIVELLI", "NIVELLS"),
                   new Vector2(0, 780), new Vector2(600, 70),
                   44, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
 
@@ -111,7 +151,7 @@ public class LevelSelectUI : MonoBehaviour
         blRT.anchorMin = Vector2.zero; blRT.anchorMax = Vector2.one;
         blRT.anchoredPosition = Vector2.zero; blRT.sizeDelta = Vector2.zero;
         var backTxt = backLbl.AddComponent<TextMeshProUGUI>();
-        backTxt.text = LangText.Pick("< Volver", "< Retour", "< Back", "< Indietro");
+        backTxt.text = LangText.Pick("< Volver", "< Retour", "< Back", "< Indietro", "< Tornar");
         backTxt.fontSize = 26;
         backTxt.color = Cream;
         backTxt.alignment = TextAlignmentOptions.Left;
@@ -201,7 +241,7 @@ public class LevelSelectUI : MonoBehaviour
             lRT.anchorMin = new Vector2(0, 0f); lRT.anchorMax = new Vector2(1, 0.4f);
             lRT.offsetMin = Vector2.zero; lRT.offsetMax = Vector2.zero;
             var lockedTxt = lockedGO.AddComponent<TextMeshProUGUI>();
-            lockedTxt.text      = LangText.Pick("Próximamente", "Bientôt", "Coming soon", "Prossimamente");
+            lockedTxt.text      = LangText.Pick("Próximamente", "Bientôt", "Coming soon", "Prossimamente", "Properament");
             lockedTxt.fontSize  = 19;
             lockedTxt.color     = CreamDim;
             lockedTxt.alignment = TextAlignmentOptions.Center;
@@ -254,29 +294,67 @@ public class LevelSelectUI : MonoBehaviour
         bcRT.anchorMin = bcRT.anchorMax = new Vector2(0.5f, 0.5f);
         bcRT.pivot     = new Vector2(0.5f, 0.5f);
         bcRT.anchoredPosition = Vector2.zero;
-        bcRT.sizeDelta = new Vector2(620, 580);
+        bcRT.sizeDelta = new Vector2(620, 760);
         briefCard.GetComponent<Image>().color = NavyMid;
 
-        briefTitleText = MakeLabel(briefCard.transform, "BriefTitle", "", new Vector2(0, 170), new Vector2(540, 100),
+        briefTitleText = MakeLabel(briefCard.transform, "BriefTitle", "", new Vector2(0, 300), new Vector2(540, 90),
                                     29, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
         briefTitleText.enableWordWrapping = true;
 
-        briefSummaryText = MakeLabel(briefCard.transform, "BriefSummary", "", new Vector2(0, 65), new Vector2(500, 100),
-                                      24, Cream, TextAlignmentOptions.Center, FontStyles.Normal);
+        // El resumen creció mucho: en las pruebas la gente no entendía que era
+        // un detective, ni que había un posible asesinato, hasta que se lo
+        // explicaban de viva voz. Ahora el brief lo dice con todas las letras,
+        // y necesita sitio — antes cabían tres líneas.
+        briefSummaryText = MakeLabel(briefCard.transform, "BriefSummary", "", new Vector2(0, 120), new Vector2(540, 250),
+                                      23, Cream, TextAlignmentOptions.Center, FontStyles.Normal);
         briefSummaryText.enableWordWrapping = true;
 
-        // Las 3 condiciones de estrella, explícitas, antes de empezar —
-        // resuelve la duda de "qué necesito hacer para sacar más o menos
-        // estrellas" sin tener que adivinarlo jugando.
-        briefStarsText = MakeLabel(briefCard.transform, "BriefStars", "", new Vector2(0, -45), new Vector2(500, 120),
-                                    20, CreamDim, TextAlignmentOptions.Center, FontStyles.Normal);
-        briefStarsText.enableWordWrapping = true;
+        // Las 3 condiciones de estrella, explícitas y antes de empezar, cada
+        // una con su estrella dibujada al lado. El encabezado es lo que de
+        // verdad faltaba: sin él la lista se leía como tres obligaciones y
+        // nadie sabía que se puede salir con una sola.
+        briefStarsHeader = MakeLabel(briefCard.transform, "BriefStarsHeader", "", new Vector2(0, -40), new Vector2(540, 28),
+                                      19, Gold, TextAlignmentOptions.Center, FontStyles.Bold);
 
-        var startBtnGO = MakeBtn(briefCard.transform, "BtnStart", "COMMENCER", new Vector2(0, -150), new Vector2(380, 74),
+        for (int i = 0; i < 3; i++)
+        {
+            var row = new GameObject("StarRow" + i, typeof(RectTransform));
+            row.transform.SetParent(briefCard.transform, false);
+            var rowRT = row.GetComponent<RectTransform>();
+            rowRT.anchorMin = rowRT.anchorMax = new Vector2(0.5f, 0.5f);
+            rowRT.pivot     = new Vector2(0.5f, 0.5f);
+            rowRT.anchoredPosition = new Vector2(0, -78f - i * 32f);
+            rowRT.sizeDelta = new Vector2(500, 30);
+
+            var icon = new GameObject("Star", typeof(RectTransform), typeof(Image));
+            icon.transform.SetParent(row.transform, false);
+            var iRT = icon.GetComponent<RectTransform>();
+            iRT.anchorMin = iRT.anchorMax = new Vector2(0f, 0.5f);
+            iRT.pivot     = new Vector2(0f, 0.5f);
+            iRT.anchoredPosition = Vector2.zero;
+            iRT.sizeDelta = new Vector2(22, 22);
+            var iImg = icon.GetComponent<Image>();
+            iImg.sprite = StarIcon.GetSprite();
+            iImg.color  = Gold;
+            iImg.raycastTarget = false;
+
+            var lbl = MakeLabel(row.transform, "Label", "", Vector2.zero, new Vector2(460, 30),
+                                 19, Cream, TextAlignmentOptions.Left, FontStyles.Normal);
+            var lRT = lbl.GetComponent<RectTransform>();
+            lRT.anchorMin = lRT.anchorMax = new Vector2(0f, 0.5f);
+            lRT.pivot     = new Vector2(0f, 0.5f);
+            lRT.anchoredPosition = new Vector2(32, 0);
+            briefStarLines[i] = lbl;
+        }
+
+        briefHintNote = MakeLabel(briefCard.transform, "BriefHintNote", "", new Vector2(0, -178), new Vector2(500, 26),
+                                   16, CreamDim, TextAlignmentOptions.Center, FontStyles.Italic);
+
+        var startBtnGO = MakeBtn(briefCard.transform, "BtnStart", "COMMENCER", new Vector2(0, -230), new Vector2(380, 74),
                 Gold, TextDark, 28, FontStyles.Bold, StartSelected);
         startBtnLabel = startBtnGO.GetComponentInChildren<TMP_Text>();
 
-        var briefBackGO = MakeBtn(briefCard.transform, "BtnBack", "Retour", new Vector2(0, -225), new Vector2(240, 50),
+        var briefBackGO = MakeBtn(briefCard.transform, "BtnBack", "Retour", new Vector2(0, -305), new Vector2(240, 50),
                 Color.clear, CreamDim, 21, FontStyles.Normal, ShowGrid);
         briefBackBtnLabel = briefBackGO.GetComponentInChildren<TMP_Text>();
     }

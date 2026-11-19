@@ -29,4 +29,15 @@ public class CorentinNPC : DetectiveNPC
 
     protected override string GreetingTranslationIt =>
         "El café está abierto. Es todo lo que puedo hacer hoy.";
+
+    protected override string GreetingCa =>
+        "El [cafè|café] és obert. És tot el que puc fer avui.";
+
+    protected override string GreetingTranslationCa =>
+        "El café está abierto. Es todo lo que puedo hacer hoy.";
+
+    protected override string GreetingAgain   => "Quoi encore ?";
+    protected override string GreetingAgainEn => "What now?";
+    protected override string GreetingAgainIt => "Cos'altro?";
+    protected override string GreetingAgainCa => "I ara què?";
 }

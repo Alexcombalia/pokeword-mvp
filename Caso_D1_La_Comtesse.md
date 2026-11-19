@@ -61,8 +61,8 @@ El coñac importa: en la Francia ocupada de 1941 no se encuentra. Hay achicoria 
 
 ## 5. Expediente por NPC
 
-### 5.1 NADIA PETROVA, 24 — la doncella. **La clienta.**
-Sirvió a la condesa nueve años. Es quien ha llamado al detective y quien paga. Honesta, cálida, directa.
+### 5.1 NADIA PETROVA, 24 — la doncella. **La testigo principal.**
+Sirvió a la condesa nueve años. No cree que fuera el corazón y lo dijo en voz alta en cuanto llegó la policía. Nadie la contrata y nadie paga: el caso le ha caído al inspector por turno. Honesta, cálida, directa.
 
 | Qué sabe | Condición |
 |---|---|
@@ -71,7 +71,7 @@ Sirvió a la condesa nueve años. Es quien ha llamado al detective y quien paga.
 | **[N3]** **No le vio la cara.** Lo vio de espaldas, en el pasillo | Abierto |
 | **[N4]** Llevaba un maletín. Un comerciante de joyas, **cree** — es una impresión, no un hecho | Si preguntan cómo era o qué llevaba |
 | **[N5]** El collar ha desaparecido | Abierto |
-| **[N6]** Si le dicen que Piotr la acusa: *«¿Yo? Pero si soy yo quien le ha llamado, señor.»* | Si se lo cuentan |
+| **[N6]** Si le dicen que Piotr la acusa: *«No tengo nada, señor. Mire mi cuarto.»* — se defiende ofreciendo que la registren, no acusando de vuelta | Si se lo cuentan |
 
 **Nunca hace:** adivinar quién era · acusar · decir que alguien miente.
 

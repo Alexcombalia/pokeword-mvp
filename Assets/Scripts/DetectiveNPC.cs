@@ -34,14 +34,58 @@ public abstract class DetectiveNPC : MonoBehaviour
     protected virtual string GreetingTranslationEn => null;
     protected virtual string GreetingIt => null;
     protected virtual string GreetingTranslationIt => null;
+    protected virtual string GreetingCa => null;
+    protected virtual string GreetingTranslationCa => null;
 
-    string ActiveGreeting =>
-        (GameSettings.IsEnglish && !string.IsNullOrEmpty(GreetingEn)) ? GreetingEn :
-        (GameSettings.IsItalian && !string.IsNullOrEmpty(GreetingIt)) ? GreetingIt : Greeting;
+    // ── Volver a hablar con alguien ──────────────────────────────────────
+    //
+    // La frase de entrada se recitaba ENTERA cada vez que se abría la
+    // conversación. La primera vez presenta al personaje; a partir de la
+    // segunda suena a máquina, y este juego se sostiene entero sobre la
+    // sensación de estar hablando con una persona.
+    //
+    // Desde la segunda vez se usa una línea corta de "ya nos conocemos". Si
+    // un personaje no la define, se repite la larga: nunca se queda mudo.
+    protected virtual string GreetingAgain   => null;
+    protected virtual string GreetingAgainEn => null;
+    protected virtual string GreetingAgainIt => null;
+    protected virtual string GreetingAgainCa => null;
+    protected virtual string GreetingAgainTranslation   => null;
+    protected virtual string GreetingAgainTranslationEn => null;
+    protected virtual string GreetingAgainTranslationIt => null;
+    protected virtual string GreetingAgainTranslationCa => null;
 
-    string ActiveGreetingTranslation =>
-        (GameSettings.IsEnglish && !string.IsNullOrEmpty(GreetingEn)) ? GreetingTranslationEn :
-        (GameSettings.IsItalian && !string.IsNullOrEmpty(GreetingIt)) ? GreetingTranslationIt : GreetingTranslation;
+    // Por instancia, así que se reinicia solo al recargar la escena — es
+    // decir, una vez por partida del nivel, que es justo lo que se quiere.
+    bool hasGreeted;
+
+    string PickLang(string fr, string en, string it, string ca) =>
+        (GameSettings.IsEnglish && !string.IsNullOrEmpty(en)) ? en :
+        (GameSettings.IsItalian && !string.IsNullOrEmpty(it)) ? it :
+        (GameSettings.IsCatalan && !string.IsNullOrEmpty(ca)) ? ca : fr;
+
+    string ActiveGreeting
+    {
+        get
+        {
+            if (hasGreeted)
+            {
+                string again = PickLang(GreetingAgain, GreetingAgainEn, GreetingAgainIt, GreetingAgainCa);
+                if (!string.IsNullOrEmpty(again)) return again;
+            }
+            return PickLang(Greeting, GreetingEn, GreetingIt, GreetingCa);
+        }
+    }
+
+    string ActiveGreetingTranslation
+    {
+        get
+        {
+            if (hasGreeted && !string.IsNullOrEmpty(PickLang(GreetingAgain, GreetingAgainEn, GreetingAgainIt, GreetingAgainCa)))
+                return PickLang(GreetingAgainTranslation, GreetingAgainTranslationEn, GreetingAgainTranslationIt, GreetingAgainTranslationCa);
+            return PickLang(GreetingTranslation, GreetingTranslationEn, GreetingTranslationIt, GreetingTranslationCa);
+        }
+    }
 
     private bool playerInRange = false;
     private DialogueSystem dialogueSystem;
@@ -58,6 +102,16 @@ public abstract class DetectiveNPC : MonoBehaviour
 
         if (chatClient == null)
             Debug.LogError($"[{DisplayName}] falta su DetectiveChatClient en el mismo GameObject.", this);
+        else
+            // La conversación ya NO se borra al reabrir el diálogo (así el
+            // testigo recuerda lo que le acabas de preguntar), pero sí tiene
+            // que empezar limpia en cada PARTIDA: si no, al reintentar el caso
+            // el personaje seguiría acordándose del intento anterior y podría
+            // dar por dicho algo que en esta partida nadie ha dicho.
+            //
+            // Aquí es el sitio exacto: Start() corre una vez por carga de
+            // escena, que es una vez por partida del nivel.
+            StartCoroutine(chatClient.ResetMemory());
     }
 
     private void Update()
@@ -67,7 +121,13 @@ public abstract class DetectiveNPC : MonoBehaviour
         if (!dialogueSystem.IsOpen() && (Input.GetKeyDown(KeyCode.E) || MobileInput.InteractPressed))
         {
             indicator?.Hide();
-            dialogueSystem.OpenDetectiveChat(chatClient, DisplayName, ActiveGreeting, ActiveGreetingTranslation, transform);
+            // Se leen ANTES de marcar hasGreeted: la primera vez tienen que
+            // devolver todavía la presentación larga.
+            string line = ActiveGreeting;
+            string tr   = ActiveGreetingTranslation;
+            hasGreeted = true;
+
+            dialogueSystem.OpenDetectiveChat(chatClient, DisplayName, line, tr, transform);
         }
     }
 

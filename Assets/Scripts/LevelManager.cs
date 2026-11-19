@@ -64,9 +64,66 @@ public class LevelManager : MonoBehaviour
         bestResults = SaveSystem.LoadLevelResults();
     }
 
+    // El reloj se para mientras el panel del profesor está abierto. Si no, el
+    // jugador aprende enseguida que preguntar una duda le cuesta la estrella de
+    // tiempo — y entonces deja de preguntar, que es exactamente la conducta que
+    // el juego intenta corregir en gente a la que le da vergüenza hablar.
+    //
+    // No hay exploit que valga la pena: desde ese panel no se avanza el caso,
+    // no se habla con nadie y no se marca ningún checkpoint.
+    public bool TimerPaused { get; set; }
+
+    // ─── REPETICIONES DE HABLA Y ESCUCHA ─────────────────────────────────
+    //
+    // El objetivo del juego dejó de ser "aprender el idioma" (30/08/2026): es
+    // entrenar listening y speaking. Los testers lo dijeron antes que nadie —
+    // «no he aprendido mucho, pero he mejorado hablando y escuchando». Esto es
+    // lo que mide esa afirmación, y es el único número que el jugador no
+    // consigue en ninguna otra app.
+    //
+    // HABLADO cuenta SOLO lo que ha pasado por el micrófono. Si el jugador
+    // escribe, no ha hablado — contarlo sería mentir justo en el dato que
+    // sostiene la tesis del producto.
+    public int   WordsSpoken   { get; private set; }
+    public int   WordsHeard    { get; private set; }
+    public float SecondsSpoken { get; private set; }
+    public float SecondsHeard  { get; private set; }
+
+    public void ReportSpoken(string targetText, float seconds)
+    {
+        WordsSpoken   += CountWords(targetText);
+        SecondsSpoken += Mathf.Max(0f, seconds);
+    }
+
+    // Volver a escuchar CUENTA. Repetir una frase para entenderla es escuchar,
+    // y es exactamente la conducta que el botón de repetir existe para
+    // fomentar: penalizarla sería absurdo.
+    public void ReportHeard(string targetText, float seconds)
+    {
+        WordsHeard   += CountWords(targetText);
+        SecondsHeard += Mathf.Max(0f, seconds);
+    }
+
+    // Cuenta sobre el idioma OBJETIVO. Las réplicas vienen etiquetadas
+    // "[collaret|collar]" y hay que quedarse con la mitad de la izquierda, que
+    // es lo que se oyó; contar la cadena cruda inflaría el número al doble en
+    // cada palabra etiquetada.
+    public static int CountWords(string tagged)
+    {
+        if (string.IsNullOrEmpty(tagged)) return 0;
+        string clean = System.Text.RegularExpressions.Regex.Replace(tagged, @"\[([^\|\]]+)\|[^\]]*\]", "$1");
+        clean = System.Text.RegularExpressions.Regex.Replace(clean, @"<[^>]+>", " "); // etiquetas de TMP
+        var parts = clean.Split(new[] { ' ', '\n', '\r', '\t', '«', '»', '"' }, System.StringSplitOptions.RemoveEmptyEntries);
+        int n = 0;
+        foreach (var p in parts)
+            foreach (var c in p)
+                if (char.IsLetterOrDigit(c)) { n++; break; }   // descarta "—", "...", ":" sueltos
+        return n;
+    }
+
     private void Update()
     {
-        if (!IsActive) return;
+        if (!IsActive || TimerPaused) return;
 
         // El reloj sigue corriendo aunque ya se haya conseguido el objetivo
         // — el jugador puede seguir hablando para intentar la estrella de
@@ -98,8 +155,17 @@ public class LevelManager : MonoBehaviour
         HintUsed          = false;
         SkipCount         = 0;
         IsActive           = true;
+        TimerPaused        = false;
+        WordsSpoken        = 0;
+        WordsHeard         = 0;
+        SecondsSpoken      = 0f;
+        SecondsHeard       = 0f;
         capturedThisAttempt.Clear();
         CheckpointsReached.Clear();
+
+        // El profesor empieza cada partida sin memoria, igual que los NPCs: si
+        // no, arrastraría las dudas del intento anterior.
+        TeacherPanel.Instance?.ResetConversation();
 
         // El id manda sobre el modo, siempre — así toda la campaña de 10
         // niveles (1-5 débutant, 6-10 avancé) queda sincronizada sin tener
@@ -275,6 +341,10 @@ public class LevelManager : MonoBehaviour
     private void EndLevel(bool success)
     {
         IsActive = false;
+        // Si el nivel termina con el panel del profesor abierto, se queda
+        // flotando encima de la pantalla de resultado y además deja el reloj
+        // pausado para el siguiente intento.
+        TeacherPanel.Instance?.Close();
         NPCVoicePlayer.Instance?.Stop(); // corta la voz de Jacques si seguía sonando
 
         float elapsed = CurrentLevel.detectiveMode
@@ -291,15 +361,18 @@ public class LevelManager : MonoBehaviour
         // secondStarCheckpoint es un reto concreto (en avancé, romper al
         // mentiroso); si no, se cae a la estrella de palabras.
         //
-        // Esto importa desde que los casos débutant sustituyen a la campaña
-        // vieja: un principiante está ahí para aprender vocabulario, así que
-        // sus casos siguen premiando capturar palabras, mientras que en avancé
-        // —donde ya se habla francés— el segundo reto es el careo. Mismo modo
-        // detective, distinta segunda estrella, sin ramas por dificultad.
+        // En los casos débutant la 2ª estrella era CAPTURAR VOCABULARIO. Se
+        // retiró el 30/08/2026 por dos motivos: el objetivo del juego dejó de
+        // ser aprender palabras y pasó a ser entrenar habla y escucha, y además
+        // estaba mal calibrada — sacar las 6 palabras clave era casi imposible
+        // en 40 minutos.
+        //
+        // Ahora se premia HABLAR: palabras dichas por micrófono. Escuchar pasa
+        // solo por jugar; hablar es lo que el jugador evita, y es donde la
+        // estrella tiene que empujar.
         bool starWords = !string.IsNullOrEmpty(CurrentLevel.secondStarCheckpoint)
             ? CheckpointsReached.Contains(CurrentLevel.secondStarCheckpoint)
-            : (CurrentLevel.ActiveTargetWords.Count > 0 &&
-               CapturedTargetCount() >= CurrentLevel.ActiveTargetWords.Count);
+            : (CurrentLevel.spokenWordsTarget > 0 && WordsSpoken >= CurrentLevel.spokenWordsTarget);
 
         bool starSpeed = success && elapsed <= CurrentLevel.starTimeSeconds;
 

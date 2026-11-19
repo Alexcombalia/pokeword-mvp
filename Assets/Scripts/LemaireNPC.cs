@@ -15,20 +15,36 @@ public class LemaireNPC : DetectiveNPC
     public override string DisplayName => "Docteur Lemaire";
 
     public override string Greeting =>
-        "J'ai écrit : le cœur. Elle était vieille. C'est normal.";
+        "Je crois que c'est une crise cardiaque. Elle était vieille. C'est normal.";
 
     protected override string GreetingTranslation =>
-        "Escribí: el corazón. Era mayor. Es lo normal.";
+        "Creo que fue un infarto. Era mayor. Es lo normal.";
 
     protected override string GreetingEn =>
-        "I wrote: the heart. She was old. That is normal.";
+        "I think it was a heart attack. She was old. That is normal.";
 
     protected override string GreetingTranslationEn =>
-        "Escribí: el corazón. Era mayor. Es lo normal.";
+        "Creo que fue un infarto. Era mayor. Es lo normal.";
 
     protected override string GreetingIt =>
-        "Ho scritto: il cuore. Era anziana. È normale.";
+        "Credo sia stato un infarto. Era anziana. È normale.";
 
     protected override string GreetingTranslationIt =>
-        "Escribí: el corazón. Era mayor. Es lo normal.";
+        "Creo que fue un infarto. Era mayor. Es lo normal.";
+
+    protected override string GreetingCa =>
+        "Crec que va ser un infart. Era gran. És normal.";
+
+    protected override string GreetingTranslationCa =>
+        "Creo que fue un infarto. Era mayor. Es lo normal.";
+
+    protected override string GreetingAgain   => "Encore vous. Je vous écoute.";
+    protected override string GreetingAgainEn => "You again. I'm listening.";
+    protected override string GreetingAgainIt => "Ancora lei. La ascolto.";
+    protected override string GreetingAgainCa => "Vostè un altre cop. L'escolto.";
+
+    protected override string GreetingAgainTranslation   => "Usted otra vez. Le escucho.";
+    protected override string GreetingAgainTranslationEn => "Usted otra vez. Le escucho.";
+    protected override string GreetingAgainTranslationIt => "Usted otra vez. Le escucho.";
+    protected override string GreetingAgainTranslationCa => "Usted otra vez. Le escucho.";
 }
